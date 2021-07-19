@@ -1,12 +1,12 @@
 CC = gcc
 WARN = -Wall -Wextra
 FLAGS = -O2
-
+SDL = `pkg-config --cflags --libs sdl2`
 emu: src/*.c src/*.h
-	$(CC) $(WARN) src/chip8.c src/decode.c src/execute.c src/fetch.c -o bin/emu
+	$(CC) $(WARN) src/chip8.c src/graphics.c -o bin/emu $(SDL)
 
 emu_debug: src/*.c src/*.h
-	$(CC) $(WARN) src/chip8.c src/decode.c src/execute.c src/fetch.c -o bin/emu -g
+	$(CC) $(WARN) $(SDL) src/chip8.c src/graphics.c -o bin/emu $(SDL) -g
 
 clean:
 	rm bin/*
