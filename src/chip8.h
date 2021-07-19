@@ -24,9 +24,9 @@
 #define Push(x) chip8.stack[++top] = x
 
 typedef struct chip8_t {
-    bool display[64][32]; /* Display */
-    uint8_t memory[4096]; /* 4 kb memory */
-    uint16_t PC;          /* Program counter, points at next instruction */
+    bool display[WIN_H][WIN_W]; /* Display */
+    uint8_t memory[4096];       /* 4 kb memory */
+    uint16_t PC;    /* Program counter, points at next instruction */
     uint16_t index; /* Index register, points at any instruction in memory */
     uint16_t stack[16];    /* Stack to hold 16 - 2 Byte instructions */
     uint8_t delay_timer;   /* Delay timer */

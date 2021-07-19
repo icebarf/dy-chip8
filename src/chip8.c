@@ -86,7 +86,7 @@ void decode_and_execute() {
      * example operands- 00E0, 3XNN*/
 
     /* Variables for Instruction set */
-    uint16_t NNN = (inst[1] << 4) | inst[0];
+    uint16_t NNN = (inst[1] << 8) | inst[0];
     uint16_t KK = inst[0];
     uint8_t operand_X = (inst[1] & 0x0f);
     uint8_t operand_Y = (inst[0] >> 4);
@@ -316,7 +316,8 @@ void decode_and_execute() {
         chip8.index = 0x0000;
         draw_to_window((chip8.registers[operand_X] & 64),
                        (chip8.registers[operand_Y] & 32), operand_right);
-        /*printf("DXYN  - DRW Vx, Vy, n - Not implemented \n");*/
+        printf("D%03x - DRW V%01x, V%01x, %01x\n", NNN, operand_X, operand_Y,
+               operand_right);
         break;
     /* 0E instructions */
     case 0x0e:
@@ -433,7 +434,7 @@ int main(int argc, char **argv) {
     printf("Program Counter\tHighByte LowByte\t\tInstruction "
            "nibble\tX\tY\tLast\tAssembly\n");
     int read_upto = 0x200 + read_size;
-    while (chip8.PC < read_upto) {
+    while (true) {
         srand(time(NULL));
         fetch();
         decode_and_execute();

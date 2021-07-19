@@ -35,18 +35,24 @@ void destroy_window(SDL_Window *screen, SDL_Renderer *renderer) {
 
 void draw_to_window(uint8_t x, uint8_t y, uint8_t n) {
     for (int row = 0; row < n; row++) {
+
         uint8_t sprite_in_memory = chip8.memory[chip8.index + row];
+
         for (int col = 0; col < 8; col++) {
+
             uint8_t sprite_pixel = sprite_in_memory & (0x80 >> col);
-            bool *screen_pixel = &chip8.display[x][y];
+            bool *screen_pixel = &chip8.display[x + col][y + row];
 
             /* Check if sprite pixel is set */
-            if (sprite_in_memory) {
+            if (sprite_pixel) {
                 /* Check if display pixel is set */
                 if (*screen_pixel == true) {
                     chip8.registers[0xf] = 1;
+                    *screen_pixel = false;
                 }
-                /* Draw here */
+                *screen_pixel = true;
+
+                /* Draw here with SDL here */
             }
         }
     }
