@@ -10,3 +10,5 @@ int create_window();
 void destroy_window(SDL_Window *window, SDL_Renderer *renderer);
 
 void draw_to_window(uint8_t x, uint8_t y, uint8_t n);
+
+void print_screen();

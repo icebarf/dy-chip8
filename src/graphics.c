@@ -48,12 +48,22 @@ void draw_to_window(uint8_t x, uint8_t y, uint8_t n) {
                 /* Check if display pixel is set */
                 if (*screen_pixel == true) {
                     chip8.registers[0xf] = 1;
-                    *screen_pixel = false;
                 }
-                *screen_pixel = true;
+                *screen_pixel ^= sprite_in_memory;
 
                 /* Draw here with SDL here */
             }
         }
+    }
+}
+
+void print_screen() {
+    for (int i = 0; i < WIN_H; i++) {
+        for (int j = 0; j < WIN_W; j++) {
+            if (chip8.display[i][j] == 1) {
+                printf("1 ");
+            }
+        }
+        puts("");
     }
 }
