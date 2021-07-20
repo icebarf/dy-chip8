@@ -28,9 +28,20 @@ int create_window() {
     return 0;
 }
 
-void destroy_window(SDL_Window *screen, SDL_Renderer *renderer) {
+void destroy_window(SDL_Window *screen) {
     SDL_DestroyWindow(screen);
     SDL_Quit();
+}
+
+void print_screen() {
+    for (int i = 0; i < WIN_H; i++) {
+        for (int j = 0; j < WIN_W; j++) {
+            if (chip8.display[i][j] == 1) {
+                printf("1 ");
+            }
+        }
+        puts("");
+    }
 }
 
 void draw_to_window(uint8_t x, uint8_t y, uint8_t n) {
@@ -54,16 +65,5 @@ void draw_to_window(uint8_t x, uint8_t y, uint8_t n) {
                 /* Draw here with SDL here */
             }
         }
-    }
-}
-
-void print_screen() {
-    for (int i = 0; i < WIN_H; i++) {
-        for (int j = 0; j < WIN_W; j++) {
-            if (chip8.display[i][j] == 1) {
-                printf("1 ");
-            }
-        }
-        puts("");
     }
 }

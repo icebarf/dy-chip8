@@ -1,4 +1,5 @@
 #include "chip8.h"
+#include "debug.h"
 #include "graphics.h"
 #include <stdint.h>
 #include <stdio.h>
@@ -14,35 +15,34 @@ int top = -1;
 
 /* Fontset for chip8 */
 uint8_t fontset[80] = {
-    0x00F0, 0x0090, 0x0090, 0x0090, 0x00F0, // 0
-    0x0020, 0x0060, 0x0020, 0x0020, 0x0070, // 1
-    0x00F0, 0x0010, 0x00F0, 0x0080, 0x00F0, // 2
-    0x00F0, 0x0010, 0x00F0, 0x0010, 0x00F0, // 3
-    0x0090, 0x0090, 0x00F0, 0x0010, 0x0010, // 4
-    0x00F0, 0x0080, 0x00F0, 0x0010, 0x00F0, // 5
-    0x00F0, 0x0080, 0x00F0, 0x0090, 0x00F0, // 6
-    0x00F0, 0x0010, 0x0020, 0x0040, 0x0040, // 7
-    0x00F0, 0x0090, 0x00F0, 0x0090, 0x00F0, // 8
-    0x00F0, 0x0090, 0x00F0, 0x0010, 0x00F0, // 9
-    0x00F0, 0x0090, 0x00F0, 0x0090, 0x0090, // A
-    0x00E0, 0x0090, 0x00E0, 0x0090, 0x00E0, // B
-    0x00F0, 0x0080, 0x0080, 0x0080, 0x00F0, // C
-    0x00E0, 0x0090, 0x0090, 0x0090, 0x00E0, // D
-    0x00F0, 0x0080, 0x00F0, 0x0080, 0x00F0, // E
-    0x00F0, 0x0080, 0x00F0, 0x0080, 0x0080  // F
+    0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
+    0x20, 0x60, 0x20, 0x20, 0x70, // 1
+    0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
+    0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
+    0x90, 0x90, 0xF0, 0x10, 0x10, // 4
+    0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
+    0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
+    0xF0, 0x10, 0x20, 0x40, 0x40, // 7
+    0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
+    0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
+    0xF0, 0x90, 0xF0, 0x90, 0x90, // A
+    0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
+    0xF0, 0x80, 0x80, 0x80, 0xF0, // C
+    0xE0, 0x90, 0x90, 0x90, 0xE0, // D
+    0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
+    0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 };
 
 uint8_t keypad[4][4] = {
-    {0x0001, 0x0002, 0x0003, 0x000C}, // 1 2 3 4
-    {0x0004, 0x0005, 0x0006, 0x000D}, // Q W E R
-    {0x0007, 0x0008, 0x0009, 0x000E}, // A S D F
-    {0x000A, 0x0000, 0x000B, 0x000F}  // Z X C V
+    {0x01, 0x02, 0x03, 0x0C}, // 1 2 3 4
+    {0x04, 0x05, 0x06, 0x0D}, // Q W E R
+    {0x07, 0x08, 0x09, 0x0E}, // A S D F
+    {0x0A, 0x00, 0x0B, 0x0F}  // Z X C V
 
 };
 /* Emulator routines */
 
 int fetchrom(char *romname) {
-    /* Open fiile into fp */
     FILE *fp;
     fp = fopen(romname, "rb");
     if (fp == NULL) {
@@ -50,15 +50,11 @@ int fetchrom(char *romname) {
         return -1;
     }
 
-    /* Get file size */
     if (fseek(fp, 0L, SEEK_END) < 0) {
         printf("Error: Possibly corrupt rom\n");
         return -1;
     }
-    /* Store file size */
     int file_size = ftell(fp);
-    assert(file_size > 0);
-    /* Go back again*/
     if (fseek(fp, 0L, SEEK_SET) < 0) {
         printf("Error: Possibly corrupt rom\n");
 
@@ -67,13 +63,12 @@ int fetchrom(char *romname) {
 
     /* Read rom into memory */
     fread(&chip8.memory[0x0200], 1, file_size, fp);
-    puts("Read ROM successfully");
     fclose(fp);
     return file_size;
 }
 
 /* fetch routine */
-void fetch() {
+static inline void fetch() {
     opcode = chip8.memory[chip8.PC] << 8 | chip8.memory[chip8.PC + 1];
 }
 
@@ -98,29 +93,32 @@ void decode_and_execute() {
     /* Variables for FX33 instructions */
     uint8_t num, num_dig1, num_dig2, num_dig3;
 
-    /*Debugging*/
-    /*printf("%04x\t\t\t%02x\t\t %02x\t\t\t\t", chip8.PC, inst[1], inst[0]);
-    printf("%01x", inst_nib);
-    printf("\t\t\t\t\t%01x\t", operand_X);
-    printf("%01x\t", operand_Y);
-    printf("%01x\t\t", operand_right);*/
-    /*printf("%04x\n", NNN);*/
+#ifdef DEBUG
+    printf("0x%04x    0x%04x         ", chip8.PC, opcode);
+#endif
+
 
     /*Decoding here */
     switch (inst_nib) {
     case 0x00:
         switch (KK) {
-        /* 00E0 instruction */
+        /* 00E0 */
         case 0xe0:
-            /*puts("00E0 - CLS");*/
+#ifdef DEBUG
+            printf("CLS\n");
+#endif
             break;
         /* 00EE instruction */
         case 0xee:
             Pop(chip8.PC);
-            /*puts("00EE - RET");*/
+#ifdef DEBUG
+            printf("RET\n");
+#endif
             break;
-            // default:
-            /*puts("");*/
+#ifdef DEBUG
+        default:
+            puts("");
+#endif
         }
 
         break;
@@ -129,14 +127,18 @@ void decode_and_execute() {
     case 0x01:
         /* Set program counter to NNN */
         chip8.PC = NNN;
-        /*printf("1%03x - JMP %03x\n", NNN, NNN);*/
+#ifdef DEBUG
+        printf("JMP 0x%03x\n", NNN);
+#endif
         break;
     /* 2NNN instruction */
     case 0x02:
         /*Push current PC to stack, set PC to NNN */
         Push(chip8.PC);
         chip8.PC = NNN;
-        /*printf("2%03x - CALL %03x\n", NNN, NNN);*/
+#ifdef DEBUG
+        printf("CALL 0x%03x\n", NNN);
+#endif
         break;
 
     /* 3XKK instruction */
@@ -145,7 +147,9 @@ void decode_and_execute() {
         if (!(chip8.registers[operand_X] ^ KK)) {
             chip8.PC += 2;
         }
-        /*printf("3%03x - SE V%01x, %02x\n", NNN, operand_X, KK);*/
+#ifdef DEBUG
+        printf("SE V%01x, 0x%02x\n", operand_X, KK);
+#endif
         break;
 
     /* 4XKK instruction */
@@ -155,7 +159,9 @@ void decode_and_execute() {
         if (chip8.registers[operand_X] ^ KK) {
             chip8.PC += 2;
         }
-        /*printf("3%03x - SNE V%01x, %02x\n", NNN, operand_X, KK);*/
+#ifdef DEBUG
+        printf("SNE V%01x, 0x%02x\n", operand_X, KK);
+#endif
         break;
 
     /* 5XY0 instruction */
@@ -164,23 +170,27 @@ void decode_and_execute() {
         if (!(chip8.registers[operand_X] ^ chip8.registers[operand_Y])) {
             chip8.PC += 2;
         }
-        /*printf("5%01x%01x0 - SE V%01x, %01x\n", operand_X, operand_Y,
-           operand_X, operand_Y);*/
+#ifdef DEBUG
+        printf("SE V%01x, 0x%01x\n", operand_X, operand_Y);
+#endif
         break;
 
     /* 6XKK instruction */
     case 0x06:
         /* Put KK into X */
         chip8.registers[operand_X] = KK;
-        // printf("6%01x%02x - LD V%01x, %02x\n", operand_X, KK, operand_X, KK);
+#ifdef DEBUG
+        printf("LD V%01x, 0x%02x\n", operand_X, KK);
+#endif
         break;
 
     /* 7XKK instruction */
     case 0x07:
         /* Add KK to VX then store result in VX */
         chip8.registers[operand_X] += KK;
-        // printf("7%01x%02x - ADD V%01x, %02x\n", operand_X, KK, operand_X,
-        // KK);
+#ifdef DEBUG
+        printf("ADD V%01x, 0x%02x\n", operand_X, KK);
+#endif
         break;
 
     /* 08 instructions */
@@ -190,32 +200,36 @@ void decode_and_execute() {
         case 0x0:
             /* Put value in VY to VX */
             chip8.registers[operand_X] = chip8.registers[operand_Y];
-            //  printf("8%01x%01x0 - LD V%01x, V%01x\n", operand_X, operand_Y,
-            //       operand_X, operand_Y);
+#ifdef DEBUG
+            printf("LD V%01x, V%01x\n", operand_X, operand_Y);
+#endif
             break;
         /* 8XY1 instruction */
         case 0x1:
             /* Bitwise OR on VX and VY then store result in VX */
             chip8.registers[operand_X]
                 = chip8.registers[operand_X] | chip8.registers[operand_Y];
-            // printf("8%01x%01x1 - OR V%01x, V%01x\n", operand_X, operand_Y,
-            //     operand_X, operand_Y);
+#ifdef DEBUG
+            printf("OR V%01x, V%01x\n", operand_X, operand_Y);
+#endif
             break;
         /* 8XY2 instruction */
         case 0x2:
             /* Bitwise AND on VX and VY then store result in VX */
             chip8.registers[operand_X]
                 = chip8.registers[operand_X] & chip8.registers[operand_Y];
-            // printf("8%01x%01x2 - AND V%01x, V%01x\n", operand_X, operand_Y,
-            //     operand_X, operand_Y);
+#ifdef DEBUG
+            printf("AND V%01x, V%01x\n", operand_X, operand_Y);
+#endif
             break;
         /* 8XY3 instruction */
         case 0x3:
             /* Bitwise XOR on VX and VY then store result in VX */
             chip8.registers[operand_X]
                 = chip8.registers[operand_X] ^ chip8.registers[operand_Y];
-            // printf("8%01x%01x3 - XOR V%01x, V%01x\n", operand_X, operand_Y,
-            //      operand_X, operand_Y);
+#ifdef DEBUG
+            printf("XOR V%01x, V%01x\n", operand_X, operand_Y);
+#endif
             break;
         /* 8XY4 instruction */
         case 0x4:
@@ -228,8 +242,9 @@ void decode_and_execute() {
             } else {
                 chip8.registers[0xF] = 0x0;
             }
-            // printf("8%01x%01x4 - ADD V%01x, V%01x\n", operand_X, operand_Y,
-            //     operand_X, operand_Y);
+#ifdef DEBUG
+            printf("ADD V%01x, V%01x\n", operand_X, operand_Y);
+#endif
             break;
         /* 8XY5 instruction */
         case 0x5:
@@ -240,8 +255,9 @@ void decode_and_execute() {
             } else {
                 chip8.registers[0xF] = 0x1;
             }
-            // printf("8%01x%01x5 - SUB V%01x, V%01x\n", operand_X, operand_Y,
-            //     operand_X, operand_Y);
+#ifdef DEBUG
+            printf("SUB V%01x, V%01x\n", operand_X, operand_Y);
+#endif
             break;
         /* 8XY6 instrcution */
         case 0x6:
@@ -252,8 +268,9 @@ void decode_and_execute() {
                 chip8.registers[0xF] = 0x0;
             }
             chip8.registers[operand_X] = chip8.registers[operand_X] >> 1;
-            // printf("8%01x%01x6 - SHR V%01x, V%01x\n", operand_X, operand_Y,
-            //     operand_X, operand_Y);
+#ifdef DEBUG
+            printf("SHR V%01x, V%01x\n", operand_X, operand_Y);
+#endif
             break;
         /* 8XY7 instruction */
         case 0x7:
@@ -266,8 +283,9 @@ void decode_and_execute() {
             } else {
                 chip8.registers[0xF] = 0x0;
             }
-            // printf("8%01x%01x7 - SUBN V%01x, V%01x\n", operand_X, operand_Y,
-            //     operand_X, operand_Y);
+#ifdef DEBUG
+            printf("SUBN V%01x, V%01x\n", operand_X, operand_Y);
+#endif
             break;
 
             /* 8XYE*/
@@ -279,11 +297,14 @@ void decode_and_execute() {
                 chip8.registers[0xF] = 0x0;
             }
             chip8.registers[operand_X] = chip8.registers[operand_X] << 1;
-            // printf("8%01x%01xe - SHL V%01x, V%01x\n", operand_X, operand_Y,
-            //     operand_X, operand_Y);
+#ifdef DEBUG
+            printf("SHL V%01x, V%01x\n", operand_X, operand_Y);
+#endif
             break;
+#ifdef DEBUG
         default:
             puts("");
+#endif
         }
         break;
     /* 9XY0 */
@@ -292,29 +313,34 @@ void decode_and_execute() {
         if (chip8.registers[operand_X] ^ chip8.registers[operand_Y]) {
             chip8.PC += 2;
         }
-        // printf("9%01x%01x0 - SNE V%01x, V%01x\n", operand_X, operand_Y,
-        //     operand_X, operand_Y);
+#ifdef DEBUG
+        printf("SNE V%01x, V%01x\n", operand_X, operand_Y);
+#endif
         break;
     /* ANNN*/
     case 0x0a:
         /* Set I (index register) to NNN */
         chip8.index = NNN;
-        // printf("A%03x - LD I, %03x\n", NNN, NNN);
+#ifdef DEBUG
+        printf("LD I, 0x%03x\n", NNN);
+#endif
         break;
-
     /* BNNN*/
     case 0x0b:
         /* Set program counter NNN + V0 */
         chip8.PC = NNN + chip8.registers[0];
-        // printf("B%03x - JP V0, %03x\n", NNN, NNN);
+#ifdef DEBUG
+        printf("JMP V0, 0x%03x\n", NNN);
+#endif
         break;
     /* CXKK */
     case 0x0c:
         /* generate a random number between 0 and 255 and do Bitwise AND with KK
          */
         chip8.registers[operand_X] = (rand() % (256) + 1) & KK;
-        // printf("C%01x%02x - RND V%01x, %02x\n", operand_X, KK, operand_X,
-        // KK);
+#ifdef DEBUG
+        printf("RND V%01x, 0x%02x\n", operand_X, KK);
+#endif
         break;
     /* DXYN */
     case 0x0d:
@@ -322,20 +348,27 @@ void decode_and_execute() {
         chip8.index = 0x0000;
         draw_to_window((chip8.registers[operand_X] & 64),
                        (chip8.registers[operand_Y] & 32), operand_right);
-        // printf("D%03x - DRW V%01x, V%01x, %01x\n", NNN, operand_X, operand_Y,
-        //     operand_right);
+#ifdef DEBUG
+        printf("DRW V%01x, V%01x, %01x\n", operand_X, operand_Y, operand_right);
+#endif
         break;
     /* 0E instructions */
     case 0x0e:
         switch (KK) {
         case 0x9e:
-            // printf("EX9E - SKP Vx - Not implemented \n");
+#ifdef DEBUG
+            printf("EX9E - SKP V%01x\n", operand_X);
+#endif
             break;
         case 0xA1:
-            // printf("EXA1 - SKNP Vx - Not implemented \n");
+#ifdef DEBUG
+            printf("SKNP V%01x\n", operand_X);
+#endif
             break;
-            // default:
-            // puts("");
+#ifdef DEBUG
+        default:
+            puts("");
+#endif
         }
         break;
     /* 0F instructions */
@@ -344,29 +377,48 @@ void decode_and_execute() {
         case 0x07:
             /* Set VX to Delay Timer (DT) */
             chip8.registers[operand_X] = chip8.delay_timer;
-            //    printf("F%01x07 - LD V%01x, DT\n", operand_X, operand_X);
+#ifdef DEBUG
+            printf("LD V%01x, DT\n", operand_X);
+#endif
             break;
         case 0x0a:
-            //  printf("FX0A - LD Vx, K - Not implemented \n");
+#ifdef DEBUG
+            printf("LD V%01x, K\n", operand_X);
+#endif
             break;
         case 0x15:
             chip8.delay_timer = chip8.registers[operand_X];
-            // printf("F%01x15 - LD DT, V%0x\n", operand_X, operand_X);
+#ifdef DEBUG
+            printf("LD DT, V%0x\n", operand_X);
+#endif
             break;
         case 0x18:
             /* Set Sound timer (ST) to Vx */
             chip8.sound_timer = chip8.registers[operand_X];
-            // printf("F%01x18 - LD ST, V%0x\n", operand_X, operand_X);
+#ifdef DEBUG
+            printf("LD ST, V%0x\n", operand_X);
+#endif
             break;
         case 0x1E:
             /* Add I and Vx and store in I */
             chip8.index += chip8.registers[operand_X];
-            // printf("F%01x1E - ADD I, V%0x\n", operand_X, operand_X);
+
+            /* Check for overflow and set VF */
+            if (chip8.index > 0x0FFF - chip8.registers[operand_X]) {
+                chip8.registers[0xF] = 0x1;
+            } else {
+                chip8.registers[0xF] = 0x0;
+            }
+#ifdef DEBUG
+            printf("ADD I, V%0x\n", operand_X);
+#endif
             break;
         case 0x29:
             /* Set index to sprite's address stored in VX*/
             chip8.index = chip8.registers[operand_X];
-            // printf("F%01x18 - LD F, V%0x\n", operand_X, operand_X);
+#ifdef DEBUG
+            printf("F%01x18 - LD F, V%0x\n", operand_X, operand_X);
+#endif
             break;
         case 0x33:
             /* Store decimal value present in VX in BSD order as Hundreds at I,
@@ -383,33 +435,31 @@ void decode_and_execute() {
             chip8.memory[chip8.index] = num_dig1;
             chip8.memory[chip8.index + 1] = num_dig2;
             chip8.memory[chip8.index + 2] = num_dig3;
-            // printf("F%01x33 - LD B, V%01x\n", operand_X, operand_X);
+#ifdef DEBUG
+            printf("F%01x33 - LD B, V%01x\n", operand_X, operand_X);
+#endif
             break;
 
         case 0x55:
             /*copies the values of registers V0 through Vx into memory, starting
              * at the address in I*/
-            for (int i = 0; i < 16; i += 4) {
-                chip8.memory[chip8.index] = chip8.registers[i];
-                chip8.memory[chip8.index + 1] = chip8.registers[i + 1];
-                chip8.memory[chip8.index + 2] = chip8.registers[i + 2];
-                chip8.memory[chip8.index + 3] = chip8.registers[i + 3];
-            }
-            // printf("F%01x55 - LD [I], V%01x\n", operand_X, operand_X);
+            memcpy(&chip8.memory[chip8.index], chip8.registers, 16);
+#ifdef DEBUG
+            printf("F%01x55 - LD [I], V%01x\n", operand_X, operand_X);
+#endif
             break;
         case 0x65:
             /* copies the values starting at memory index I and stores them into
              * registers */
-            for (int i = 0; i < 20; i += 4) {
-                chip8.registers[i] = chip8.memory[chip8.index];
-                chip8.registers[i + 1] = chip8.memory[chip8.index + 1];
-                chip8.registers[i + 2] = chip8.memory[chip8.index + 2];
-                chip8.registers[i + 3] = chip8.memory[chip8.index + 3];
-            }
-            // printf("F%01x65 - LD V%01x, [I]\n", operand_X, operand_X);
+            memcpy(&chip8.registers[0], &chip8.memory[chip8.index], 16);
+#ifdef DEBUG
+            printf("F%01x65 - LD V%01x, [I]\n", operand_X, operand_X);
+#endif
             break;
-            // default:
-            //  puts("");
+#ifdef DEBUG
+        default:
+            puts("");
+#endif
         }
         break;
     default:
@@ -421,9 +471,6 @@ void decode_and_execute() {
     chip8.PC += 2;
 }
 
-void execute() {
-    /* handle execution of decoded instructions */
-}
 
 int main(int argc, char **argv) {
     if (argc < 2) {
@@ -435,17 +482,22 @@ int main(int argc, char **argv) {
     read_size = fetchrom(romname);
 
     /* Load fontset into memory at 0x0000 */
-    memcpy(&chip8.memory[0x0], fontset, 80);
+    memcpy(&chip8.memory, fontset, 80);
 
     /* Set program counter */
     chip8.PC = 0x0200;
 
-    /* Emu Loop */
+#ifdef DEBUG
+    log_to_terminal();
+    print_memory();
+    printf("Memory    Instruction    Disassembly\n");
+#endif
+
+/* Emu Loop */
+#ifdef DEBUG
     int i = 0;
-    /*printf("NNN\n");*/
-    /*printf("Program Counter\tHighByte LowByte\t\tInstruction "
-           "nibble\tX\tY\tLast\tAssembly\n");*/
     int read_upto = 0x200 + read_size;
+
     while (i < read_upto) {
         srand(time(NULL));
 
@@ -465,6 +517,27 @@ int main(int argc, char **argv) {
         usleep(1);
         i++;
     }
-    print_screen();
+#endif
+
+#ifndef DEBUG
+    while (1) {
+        srand(time(NULL));
+
+        /* emulator functions */
+        fetch();
+        decode_and_execute();
+
+        /* timers and PC*/
+        if (chip8.delay_timer > 0) {
+            --chip8.delay_timer;
+        }
+        if (chip8.sound_timer > 0) {
+            --chip8.sound_timer;
+        }
+
+        /* Run at 1 Mhz or 10^-6 times a second */
+        usleep(1);
+    }
+#endif
     return 0;
 }
