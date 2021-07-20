@@ -70,6 +70,7 @@ int fetchrom(char *romname) {
 /* fetch routine */
 static inline void fetch() {
     opcode = chip8.memory[chip8.PC] << 8 | chip8.memory[chip8.PC + 1];
+    chip8.PC += 2;
 }
 
 void decode_and_execute() {
@@ -466,9 +467,6 @@ void decode_and_execute() {
         printf("Invalid instruction: %04x\n", opcode);
         break;
     }
-
-
-    chip8.PC += 2;
 }
 
 
