@@ -491,33 +491,8 @@ int main(int argc, char **argv) {
     printf("Memory    Instruction    Disassembly\n");
 #endif
 
-/* Emu Loop */
-#ifdef DEBUG
-    int i = 0;
-    int read_upto = 0x200 + read_size;
+    /* Emu Loop */
 
-    while (i < read_upto) {
-        srand(time(NULL));
-
-        /* emulator functions */
-        fetch();
-        decode_and_execute();
-
-        /* timers and PC*/
-        if (chip8.delay_timer > 0) {
-            --chip8.delay_timer;
-        }
-        if (chip8.sound_timer > 0) {
-            --chip8.sound_timer;
-        }
-
-        /* Run at 1 Mhz or 10^-6 times a second */
-        usleep(1);
-        i++;
-    }
-#endif
-
-#ifndef DEBUG
     while (1) {
         srand(time(NULL));
 
@@ -536,6 +511,5 @@ int main(int argc, char **argv) {
         /* Run at 1 Mhz or 10^-6 times a second */
         usleep(1);
     }
-#endif
     return 0;
 }
