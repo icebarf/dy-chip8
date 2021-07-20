@@ -24,3 +24,20 @@ void log_to_terminal() {
          "================");
     puts("");
 }
+
+void print_screen() {
+    puts("");
+    puts("======================================================="
+         "================");
+    puts("");
+    for (int height = 0; height < 32; height++) {
+        for (int width = 0; width < 64; width++) {
+            if (chip8.display[(height * 64) + width]) {
+                printf(" = ");
+            } else {
+                printf("   ");
+            }
+        }
+        puts("");
+    }
+}

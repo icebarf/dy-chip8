@@ -5,10 +5,10 @@
 #include <SDL2/SDL_stdinc.h>
 #include <SDL2/SDL_video.h>
 
-int create_window();
+int create_window(SDL_Window *screen, SDL_Renderer *renderer,
+                  SDL_Texture *texture);
 
-void destroy_window(SDL_Window *window);
+void destroy_window(SDL_Window *screen, SDL_Renderer *renderer,
+                    SDL_Texture *texture);
 
-void draw_to_window(uint8_t x, uint8_t y, uint8_t n);
-
-void print_screen();
+void draw_to_window(SDL_Renderer *renderer, SDL_Texture *texture);

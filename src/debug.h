@@ -4,3 +4,4 @@
 
 void print_memory();
 void log_to_terminal();
+void print_screen();

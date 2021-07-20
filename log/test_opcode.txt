@@ -1,0 +1,4 @@
+Hi, I'm working on a chip8 interpreter. I've implemented everything but graphics. I'm currently implementing the graphics using SDL2 which are to be 
+rendered on the window and bind a renderer to it. I've created a texture and now, I want to update it from the internal "screen" structure which is basically
+an array of 2048(64*32) uint8_t's. I've read the wiki page on SDL_UpdateTexture, I don't understand it's `const void *pixel` argument. How do i convert the raw
+1s and 0s (monochrome display) to ARGB32 (which is what I've created the texture with) and then pass the pixels to UpdateTexture.

@@ -1,6 +1,9 @@
 #include "chip8.h"
 #include "debug.h"
 #include "graphics.h"
+#include <SDL2/SDL_events.h>
+#include <SDL2/SDL_keycode.h>
+#include <SDL2/SDL_render.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,7 +12,7 @@
 
 /* Variables for emulator */
 chip8_t chip8 = {0};
-uint16_t opcode;
+uint16_t opcode_main, opcode;
 int read_size;
 int top = -1;
 
@@ -33,13 +36,58 @@ uint8_t fontset[80] = {
     0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 };
 
-uint8_t keypad[4][4] = {
-    {0x01, 0x02, 0x03, 0x0C}, // 1 2 3 4
-    {0x04, 0x05, 0x06, 0x0D}, // Q W E R
-    {0x07, 0x08, 0x09, 0x0E}, // A S D F
-    {0x0A, 0x00, 0x0B, 0x0F}  // Z X C V
+uint8_t keypad[16] = {
+    0x01, 0x02, 0x03, 0x0C, // 1 2 3 4
+    0x04, 0x05, 0x06, 0x0D, // Q W E R
+    0x07, 0x08, 0x09, 0x0E, // A S D F
+    0x0A, 0x00, 0x0B, 0x0F  // Z X C V
 
 };
+
+/* SDL Input Handler inline Routine */
+static inline void handle_input(SDL_Event *event) {
+    /* Row 1 */
+    if (event->key.keysym.sym == SDLK_1) {
+        chip8.key_states[one_k] = 1;
+    } else if (event->key.keysym.sym == SDLK_2) {
+        chip8.key_states[two_k] = 1;
+    } else if (event->key.keysym.sym == SDLK_3) {
+        chip8.key_states[three_k] = 1;
+    } else if (event->key.keysym.sym == SDLK_4) {
+        chip8.key_states[C_k] = 1;
+    }
+    /* Row 2 */
+    else if (event->key.keysym.sym == SDLK_q) {
+        chip8.key_states[four_k] = 1;
+    } else if (event->key.keysym.sym == SDLK_w) {
+        chip8.key_states[five_k] = 1;
+    } else if (event->key.keysym.sym == SDLK_e) {
+        chip8.key_states[six_k] = 1;
+    } else if (event->key.keysym.sym == SDLK_r) {
+        chip8.key_states[D_k] = 1;
+    }
+    /* Row 3 */
+    else if (event->key.keysym.sym == SDLK_a) {
+        chip8.key_states[seven_k] = 1;
+    } else if (event->key.keysym.sym == SDLK_s) {
+        chip8.key_states[eight_k] = 1;
+    } else if (event->key.keysym.sym == SDLK_d) {
+        chip8.key_states[nine_k] = 1;
+    } else if (event->key.keysym.sym == SDLK_f) {
+        chip8.key_states[E_k] = 1;
+    }
+    /* Row 4 */
+    else if (event->key.keysym.sym == SDLK_z) {
+        chip8.key_states[A_k] = 1;
+    } else if (event->key.keysym.sym == SDLK_x) {
+        chip8.key_states[zero_k] = 1;
+    } else if (event->key.keysym.sym == SDLK_c) {
+        chip8.key_states[B_k] = 1;
+    } else if (event->key.keysym.sym == SDLK_v) {
+        chip8.key_states[F_k] = 1;
+    }
+}
+
 /* Emulator routines */
 
 int fetchrom(char *romname) {
@@ -64,30 +112,32 @@ int fetchrom(char *romname) {
     /* Read rom into memory */
     fread(&chip8.memory[0x0200], 1, file_size, fp);
     fclose(fp);
+
+    /* get instructions read */
+    for (file_size = 0x0; chip8.memory[0x200 + file_size] != 0; file_size++)
+        ;
     return file_size;
 }
 
 /* fetch routine */
 static inline void fetch() {
-    opcode = chip8.memory[chip8.PC] << 8 | chip8.memory[chip8.PC + 1];
+    opcode_main = chip8.memory[chip8.PC] << 8 | chip8.memory[chip8.PC + 1];
     chip8.PC += 2;
 }
 
 void decode_and_execute() {
 
-    /* Store the first nibble of instruction */
-    uint8_t *inst = &opcode;
-
-    /* Get instruction */
-    uint8_t inst_nib = (inst[1] >> 4);
-
-    /* higher byte */
-    uint16_t KK = inst[0];
-    uint8_t operand_X = (inst[1] & 0x0f);
+    /* Set higher byte and instruction nibble */
+    opcode = opcode_main;
+    uint8_t hb = (opcode >> 8) & 0xff;
+    uint8_t inst_nib = (hb >> 4);
+    uint8_t operand_X = (hb & 0x0f);
 
     /* lower byte */
-    uint8_t operand_Y = (inst[0] >> 4);
-    uint8_t operand_right = (inst[0] & 0x0f);
+    uint8_t lb = (opcode & 0xff);
+    uint8_t operand_Y = (lb >> 4);
+    uint8_t operand_right = (lb & 0x0f);
+    uint16_t KK = lb;
 
     uint16_t NNN = operand_X << 8 | KK;
 
@@ -103,14 +153,18 @@ void decode_and_execute() {
     switch (inst_nib) {
     case 0x00:
         switch (KK) {
+
         /* 00E0 */
         case 0xe0:
+            memset(chip8.display, 0, WIN_W * WIN_H);
+            chip8.draw = true;
 #ifdef DEBUG
             printf("CLS\n");
 #endif
             break;
         /* 00EE instruction */
         case 0xee:
+            /* return from call */
             Pop(chip8.PC);
 #ifdef DEBUG
             printf("RET\n");
@@ -124,6 +178,7 @@ void decode_and_execute() {
 
         break;
 
+
     /* 1NNN instruction*/
     case 0x01:
         /* Set program counter to NNN */
@@ -132,6 +187,8 @@ void decode_and_execute() {
         printf("JMP 0x%03x\n", NNN);
 #endif
         break;
+
+
     /* 2NNN instruction */
     case 0x02:
         /*Push current PC to stack, set PC to NNN */
@@ -141,6 +198,7 @@ void decode_and_execute() {
         printf("CALL 0x%03x\n", NNN);
 #endif
         break;
+
 
     /* 3XKK instruction */
     case 0x03:
@@ -152,6 +210,7 @@ void decode_and_execute() {
         printf("SE V%01x, 0x%02x\n", operand_X, KK);
 #endif
         break;
+
 
     /* 4XKK instruction */
     case 0x04:
@@ -165,6 +224,7 @@ void decode_and_execute() {
 #endif
         break;
 
+
     /* 5XY0 instruction */
     case 0x05:
         /* If VX is equal to VY register then skip current instruction */
@@ -176,6 +236,7 @@ void decode_and_execute() {
 #endif
         break;
 
+
     /* 6XKK instruction */
     case 0x06:
         /* Put KK into X */
@@ -185,6 +246,7 @@ void decode_and_execute() {
 #endif
         break;
 
+
     /* 7XKK instruction */
     case 0x07:
         /* Add KK to VX then store result in VX */
@@ -193,6 +255,7 @@ void decode_and_execute() {
         printf("ADD V%01x, 0x%02x\n", operand_X, KK);
 #endif
         break;
+
 
     /* 08 instructions */
     case 0x08:
@@ -308,6 +371,8 @@ void decode_and_execute() {
 #endif
         }
         break;
+
+
     /* 9XY0 */
     case 0x09:
         /* if VX is not equal to VY then skip instruction */
@@ -318,6 +383,8 @@ void decode_and_execute() {
         printf("SNE V%01x, V%01x\n", operand_X, operand_Y);
 #endif
         break;
+
+
     /* ANNN*/
     case 0x0a:
         /* Set I (index register) to NNN */
@@ -326,6 +393,8 @@ void decode_and_execute() {
         printf("LD I, 0x%03x\n", NNN);
 #endif
         break;
+
+
     /* BNNN*/
     case 0x0b:
         /* Set program counter NNN + V0 */
@@ -334,6 +403,8 @@ void decode_and_execute() {
         printf("JMP V0, 0x%03x\n", NNN);
 #endif
         break;
+
+
     /* CXKK */
     case 0x0c:
         /* generate a random number between 0 and 255 and do Bitwise AND with KK
@@ -343,25 +414,66 @@ void decode_and_execute() {
         printf("RND V%01x, 0x%02x\n", operand_X, KK);
 #endif
         break;
+
+
     /* DXYN */
-    case 0x0d:
-        /* Set index to point at where font is */
-        chip8.index = 0x0000;
-        draw_to_window((chip8.registers[operand_X] & 64),
-                       (chip8.registers[operand_Y] & 32), operand_right);
+    case 0x0d: {
+        uint16_t pixel;
+        chip8.registers[0xF] = 0;
+        /* for N bytes */
+        for (int height = 0; height < chip8.registers[operand_right];
+             height++) {
+            /* get memory pointed to by index sequentially */
+            pixel = chip8.memory[chip8.index + height];
+            /* For each row */
+            for (int width = 0; width < 8; width++) {
+                if ((pixel & (0x80 >> width)) != 0) {
+
+                    if (chip8.display[(height + chip8.registers[operand_Y]) * 64
+                                      + (width + chip8.registers[operand_X])]) {
+                        chip8.registers[0xF] = 1;
+                    }
+                    chip8.display[(height + chip8.registers[operand_Y]) * 64
+                                  + (width + operand_X)]
+                        ^= 1;
+                }
+            }
+        }
+        chip8.draw = true;
+    }
 #ifdef DEBUG
         printf("DRW V%01x, V%01x, %01x\n", operand_X, operand_Y, operand_right);
+        /*print_screen();*/
 #endif
         break;
+
+
     /* 0E instructions */
     case 0x0e:
+
         switch (KK) {
-        case 0x9e:
+
+        /* EX9E */
+        case 0x9e: {
+            /* Increment PC if key is in down state - Down means pressed or 1*/
+            if (chip8.key_states[chip8.registers[operand_X]] == 1) {
+                chip8.PC += 2;
+            }
+            break;
+        }
+
 #ifdef DEBUG
             printf("EX9E - SKP V%01x\n", operand_X);
 #endif
             break;
+
+        /* EXA1 */
         case 0xA1:
+            /* Increment PC if key is in up state - up means not pressed or 0*/
+            if (chip8.key_states[chip8.registers[operand_X]] == 0) {
+                chip8.PC += 2;
+            }
+
 #ifdef DEBUG
             printf("SKNP V%01x\n", operand_X);
 #endif
@@ -372,8 +484,11 @@ void decode_and_execute() {
 #endif
         }
         break;
+
+
     /* 0F instructions */
     case 0x0f:
+
         switch (KK) {
         case 0x07:
             /* Set VX to Delay Timer (DT) */
@@ -382,12 +497,26 @@ void decode_and_execute() {
             printf("LD V%01x, DT\n", operand_X);
 #endif
             break;
+
+
         case 0x0a:
+            /* Until any key is pressed, pause exec, after press set VX to key
+             */
+            chip8.PC -= 2;
+            for (int i = 0; i < 16; i++) {
+                if (chip8.key_states[i] == 1) {
+                    chip8.registers[operand_X] = chip8.keyboard[i];
+                    chip8.PC += 2;
+                }
+            }
 #ifdef DEBUG
             printf("LD V%01x, K\n", operand_X);
 #endif
             break;
+
+
         case 0x15:
+            /* Set delay timer to VX */
             chip8.delay_timer = chip8.registers[operand_X];
 #ifdef DEBUG
             printf("LD DT, V%0x\n", operand_X);
@@ -400,6 +529,8 @@ void decode_and_execute() {
             printf("LD ST, V%0x\n", operand_X);
 #endif
             break;
+
+
         case 0x1E:
             /* Add I and Vx and store in I */
             chip8.index += chip8.registers[operand_X];
@@ -414,13 +545,17 @@ void decode_and_execute() {
             printf("ADD I, V%0x\n", operand_X);
 #endif
             break;
+
+
         case 0x29:
             /* Set index to sprite's address stored in VX*/
-            chip8.index = chip8.registers[operand_X];
+            chip8.index = chip8.memory[chip8.fontset[operand_X]];
 #ifdef DEBUG
             printf("F%01x18 - LD F, V%0x\n", operand_X, operand_X);
 #endif
             break;
+
+
         case 0x33:
             /* Store decimal value present in VX in BSD order as Hundreds at I,
              * Tens at I+1, Ones at I+2 */
@@ -441,6 +576,7 @@ void decode_and_execute() {
 #endif
             break;
 
+
         case 0x55:
             /*copies the values of registers V0 through Vx into memory, starting
              * at the address in I*/
@@ -449,6 +585,8 @@ void decode_and_execute() {
             printf("F%01x55 - LD [I], V%01x\n", operand_X, operand_X);
 #endif
             break;
+
+
         case 0x65:
             /* copies the values starting at memory index I and stores them into
              * registers */
@@ -463,6 +601,8 @@ void decode_and_execute() {
 #endif
         }
         break;
+
+
     default:
         printf("Invalid instruction: %04x\n", opcode);
         break;
@@ -471,16 +611,30 @@ void decode_and_execute() {
 
 
 int main(int argc, char **argv) {
+
     if (argc < 2) {
         printf("Usage: emu \"romfilename\"\n");
         return 0;
     }
+    srand(time(NULL));
+
+    /* SDL */
+    SDL_Window *screen = NULL;
+    SDL_Renderer *renderer = NULL;
+    SDL_Texture *texture = NULL;
+    SDL_Event event;
+
+    create_window(screen, renderer, texture);
+
     /* Variables to be used in emulator */
     char *romname = argv[1];
     read_size = fetchrom(romname);
 
     /* Load fontset into memory at 0x0000 */
     memcpy(&chip8.memory, fontset, 80);
+    uint8_t font_mem_loc[16] = {0x0,  0x6,  0xb,  0x10, 0x15, 0x1a, 0x1f, 0x24,
+                                0x29, 0x2e, 0x33, 0x38, 0x3D, 0x42, 0x47, 0x4C};
+    memcpy(&chip8.fontset, font_mem_loc, 16);
 
     /* Set program counter */
     chip8.PC = 0x0200;
@@ -489,18 +643,33 @@ int main(int argc, char **argv) {
     log_to_terminal();
     print_memory();
     printf("Memory    Instruction    Disassembly\n");
+
 #endif
 
     /* Emu Loop */
 
-    while (1) {
-        srand(time(NULL));
+    bool run = true;
+    while (run) {
 
-        /* emulator functions */
+        SDL_PollEvent(&event);
+        switch (event.type) {
+
+        case SDL_QUIT:
+            run = false;
+            break;
+        case SDL_KEYDOWN: {
+            handle_input(&event);
+            break;
+        }
+        }
+
+        if (chip8.draw) {
+            draw_to_window(renderer, texture);
+            chip8.draw = false;
+        }
         fetch();
         decode_and_execute();
 
-        /* timers and PC*/
         if (chip8.delay_timer > 0) {
             --chip8.delay_timer;
         }
@@ -508,8 +677,8 @@ int main(int argc, char **argv) {
             --chip8.sound_timer;
         }
 
-        /* Run at 1 Mhz or 10^-6 times a second */
         usleep(1);
     }
+    destroy_window(screen, renderer, texture);
     return 0;
 }
