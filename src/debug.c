@@ -32,7 +32,10 @@ void print_screen() {
     puts("");
     for (int i = 0; i < 32; i++) {
         for (int j = 0; j < 64; j++) {
-            printf("%d ", chip8.display[i * 64 + j]);
+            if (chip8.display[i * 64 + j] == 1)
+                printf("*");
+            else
+                printf("-");
         }
         printf("\n");
     }

@@ -452,20 +452,22 @@ void decode_and_execute() {
     case 0x0d: {
         uint16_t pixel;
         chip8.registers[0xF] = 0;
+        uint8_t X = chip8.registers[operand_X];
+        uint8_t Y = chip8.registers[operand_Y];
 
         for (int height = 0; height < operand_right; height++) {
             pixel = chip8.memory[chip8.index + height];
 
             for (int width = 0; width < 8; width++) {
                 if ((pixel & (0x80 >> width)) != 0) {
-                    if (chip8.display[((operand_X & 64) + width
-                                       + ((operand_Y & 64) + height) * WIN_W)]
+                    if (chip8.display[((X & 64) + width
+                                       + ((Y & 64) + height) * WIN_W)]
                         == 1) {
                         chip8.registers[0xF] = 1;
                     }
 
-                    chip8.display[((operand_X & 64) + width
-                                   + ((operand_Y & 64) + height) * WIN_W)]
+                    chip8.display[((X & 64) + width
+                                   + ((Y & 64) + height) * WIN_W)]
                         ^= 1;
                 }
             }
