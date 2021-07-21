@@ -27,7 +27,7 @@ int create_window(SDL_Window *screen, SDL_Renderer *renderer,
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 1);
     SDL_RenderClear(renderer);
 
-    texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32,
+    texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ABGR32,
                                 SDL_TEXTUREACCESS_STREAMING, WIN_W, WIN_H);
 
     /* Set Texture to a solid color */
@@ -58,7 +58,7 @@ void draw_to_window(SDL_Renderer *renderer, SDL_Texture *texture,
                     uint32_t *pixels) {
 
     for (int i = 0; i < 2048; i++) {
-        pixels[i] = 0xDCDCDCFF;
+        pixels[i] = 0x000000FF;
     }
 
     SDL_UpdateTexture(texture, NULL, pixels, WIN_W * 4);
