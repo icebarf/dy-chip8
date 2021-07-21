@@ -25,11 +25,23 @@ int create_window(SDL_Window *screen, SDL_Renderer *renderer,
 
     renderer = SDL_CreateRenderer(screen, -1, SDL_RENDERER_SOFTWARE);
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 1);
-    texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB24,
-                                SDL_TEXTUREACCESS_STREAMING, WIN_W, WIN_H);
     SDL_RenderClear(renderer);
-    SDL_RenderPresent(renderer);
 
+    texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32,
+                                SDL_TEXTUREACCESS_STREAMING, WIN_W, WIN_H);
+
+    /* Set Texture to a solid color */
+    int pitch;
+    uint32_t *pixels = malloc(2048 * 4);
+
+    for (int i = 0; i < WIN_W * WIN_H; i++) {
+        pixels[i] = 0x808080ff;
+    }
+
+    SDL_UpdateTexture(texture, NULL, pixels, WIN_H * 4);
+    SDL_RenderCopy(renderer, texture, NULL, NULL);
+    SDL_RenderPresent(renderer);
+    free(pixels);
     return 0;
 }
 
@@ -46,16 +58,11 @@ void draw_to_window(SDL_Renderer *renderer, SDL_Texture *texture,
                     uint32_t *pixels) {
 
     for (int i = 0; i < 2048; i++) {
-        if (chip8.display[i]) {
-            // pixels[i] = ((int32_t)chip8.display[i] << 31) >> 31;
-            pixels[i] = 0xDCDCDC;
-        } else {
-            pixels[i] = 0x000000;
-        }
+        pixels[i] = 0xDCDCDCFF;
     }
 
     SDL_UpdateTexture(texture, NULL, pixels, WIN_W * 4);
     SDL_RenderCopy(renderer, texture, NULL, NULL);
     SDL_RenderPresent(renderer);
-    print_screen();
+    /*print_screen();*/
 }
