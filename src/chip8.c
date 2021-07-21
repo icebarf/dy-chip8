@@ -613,7 +613,7 @@ void decode_and_execute() {
 
 #ifdef DEBUG
             printf("F%01x33 - LD B, V%01x\n", operand_X, operand_X);
-            printf("[VX] - %03d\n", chip8.memory[operand_X]);
+            printf("[VX] - %03d\n", chip8.registers[operand_X]);
             printf("[I, I+1, I+2] - %d%d%d\n", chip8.memory[chip8.index],
                    chip8.memory[chip8.index + 1],
                    chip8.memory[chip8.index + 2]);
@@ -636,11 +636,8 @@ void decode_and_execute() {
             /* copies the values starting at memory index I and stores them into
              * registers */
 
-            /* memcpy(&chip8.registers[0], &chip8.memory[chip8.index],
-                   operand_X + 1); */
-            for (int i = 0; i < operand_X + 1; i++) {
-                chip8.registers[i] = chip8.memory[chip8.index];
-            }
+            memcpy(&chip8.registers[0], &chip8.memory[chip8.index],
+                   operand_X + 1);
 
 #ifdef DEBUG
             printf("F%01x65 - LD V%01x, [I]\n", operand_X, operand_X);
