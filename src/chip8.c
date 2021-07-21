@@ -1,6 +1,7 @@
 #include "chip8.h"
 #include "debug.h"
 #include "graphics.h"
+#include "sound.h"
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_keycode.h>
 #include <SDL2/SDL_render.h>
@@ -183,7 +184,7 @@ void decode_and_execute() {
     uint16_t NNN = operand_X << 8 | KK;
 
 #ifdef DEBUG
-    printf("0x%04x    0x%04x         ", chip8.PC, opcode);
+    printf("0x%04x    0x%04x         ", chip8.PC - 2, opcode);
 #endif
 
 
@@ -587,7 +588,7 @@ void decode_and_execute() {
             /* Set index to sprite's address stored in VX*/
             chip8.index = chip8.memory[chip8.fontset[operand_X]];
 #ifdef DEBUG
-            printf("F%01x18 - LD F, V%0x\n", operand_X, operand_X);
+            printf("F%01x29 - LD F, V%0x\n", operand_X, operand_X);
 #endif
             break;
 
@@ -599,7 +600,7 @@ void decode_and_execute() {
             /* Seperate out 3 digits from value stored at VX */
             uint8_t num_hundreds, num_tens, num_ones;
 
-            uint8_t num = chip8.memory[operand_X];
+            uint8_t num = chip8.registers[operand_X];
             num_ones = num % 10;
             num /= 10;
             num_tens = num % 10;
@@ -613,8 +614,9 @@ void decode_and_execute() {
 #ifdef DEBUG
             printf("F%01x33 - LD B, V%01x\n", operand_X, operand_X);
             printf("[VX] - %03d\n", chip8.memory[operand_X]);
-            printf("[I, I+1, I+2] - %d%d%d\n", num_hundreds, num_tens,
-                   num_ones);
+            printf("[I, I+1, I+2] - %d%d%d\n", chip8.memory[chip8.index],
+                   chip8.memory[chip8.index + 1],
+                   chip8.memory[chip8.index + 2]);
 #endif
             break;
         }
@@ -634,8 +636,11 @@ void decode_and_execute() {
             /* copies the values starting at memory index I and stores them into
              * registers */
 
-            memcpy(&chip8.registers[0], &chip8.memory[chip8.index],
-                   operand_X + 1);
+            /* memcpy(&chip8.registers[0], &chip8.memory[chip8.index],
+                   operand_X + 1); */
+            for (int i = 0; i < operand_X + 1; i++) {
+                chip8.registers[i] = chip8.memory[chip8.index];
+            }
 
 #ifdef DEBUG
             printf("F%01x65 - LD V%01x, [I]\n", operand_X, operand_X);
@@ -671,6 +676,7 @@ int main(int argc, char **argv) {
     SDL_Event event;
 
     create_window(screen, renderer, texture);
+    init_sound();
 
     /* Variables to be used in emulator */
     char *romname = argv[1];
@@ -720,12 +726,15 @@ int main(int argc, char **argv) {
             --chip8.delay_timer;
         }
         if (chip8.sound_timer > 0) {
+            play_sound();
             --chip8.sound_timer;
-            chip8.beep = 1;
         }
     }
-    /*printf("\n\nFinal Screen Print\n");
-    print_screen();*/
+#ifdef DEBUG
+    printf("\n\nFinal Screen Print\n");
+    print_screen();
+#endif
+    destroy_sound();
     destroy_window(screen, renderer, texture);
     return 0;
 }
