@@ -117,6 +117,15 @@ static inline void handle_input(SDL_Event *event) {
         chip8.key_states[F_k] = 1;
         break;
     }
+    default: {
+        for (int i = 0; i < 16; i += 4) {
+            /* If no key is being pressed, set state to zero */
+            chip8.key_states[i] = 0;
+            chip8.key_states[i + 1] = 0;
+            chip8.key_states[i + 2] = 0;
+            chip8.key_states[i + 3] = 0;
+        }
+    }
     }
 }
 
@@ -172,9 +181,6 @@ void decode_and_execute() {
     uint16_t KK = lb;
 
     uint16_t NNN = operand_X << 8 | KK;
-
-    /* Variables for FX33 instructions */
-    uint8_t num, num_dig1, num_dig2, num_dig3;
 
 #ifdef DEBUG
     printf("0x%04x    0x%04x         ", chip8.PC, opcode);
@@ -586,31 +592,38 @@ void decode_and_execute() {
             break;
 
 
-        case 0x33:
+        case 0x33: {
             /* Store decimal value present in VX in BSD order as Hundreds at I,
              * Tens at I+1, Ones at I+2 */
 
             /* Seperate out 3 digits from value stored at VX */
-            num = chip8.memory[operand_X];
-            num_dig1 = num % 10;
+            uint8_t num_hundreds, num_tens, num_ones;
+
+            uint8_t num = chip8.memory[operand_X];
+            num_ones = num % 10;
             num /= 10;
-            num_dig2 = num % 10;
-            num_dig3 = num / 10;
+            num_tens = num % 10;
+            num_hundreds = num / 10;
 
             /* Store in BSD Order */
-            chip8.memory[chip8.index] = num_dig1;
-            chip8.memory[chip8.index + 1] = num_dig2;
-            chip8.memory[chip8.index + 2] = num_dig3;
+            chip8.memory[chip8.index] = num_hundreds;
+            chip8.memory[chip8.index + 1] = num_tens;
+            chip8.memory[chip8.index + 2] = num_ones;
+
 #ifdef DEBUG
             printf("F%01x33 - LD B, V%01x\n", operand_X, operand_X);
+            printf("[VX] - %03d\n", chip8.memory[operand_X]);
+            printf("[I, I+1, I+2] - %d%d%d\n", num_hundreds, num_tens,
+                   num_ones);
 #endif
             break;
-
+        }
 
         case 0x55:
             /*copies the values of registers V0 through Vx into memory, starting
              * at the address in I*/
-            memcpy(&chip8.memory[chip8.index], chip8.registers, 16);
+
+            memcpy(&chip8.memory[chip8.index], chip8.registers, operand_X + 1);
 #ifdef DEBUG
             printf("F%01x55 - LD [I], V%01x\n", operand_X, operand_X);
 #endif
@@ -620,7 +633,10 @@ void decode_and_execute() {
         case 0x65:
             /* copies the values starting at memory index I and stores them into
              * registers */
-            memcpy(&chip8.registers[0], &chip8.memory[chip8.index], 16);
+
+            memcpy(&chip8.registers[0], &chip8.memory[chip8.index],
+                   operand_X + 1);
+
 #ifdef DEBUG
             printf("F%01x65 - LD V%01x, [I]\n", operand_X, operand_X);
 #endif
@@ -708,8 +724,8 @@ int main(int argc, char **argv) {
             chip8.beep = 1;
         }
     }
-    printf("\n\nFinal Screen Print\n");
-    print_screen();
+    /*printf("\n\nFinal Screen Print\n");
+    print_screen();*/
     destroy_window(screen, renderer, texture);
     return 0;
 }
