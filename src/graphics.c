@@ -1,9 +1,11 @@
 #include "graphics.h"
+#include "debug.h"
 #include <SDL2/SDL_pixels.h>
 #include <SDL2/SDL_render.h>
 #include <SDL2/SDL_stdinc.h>
 #include <SDL2/SDL_video.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 extern chip8_t chip8;
 
@@ -23,14 +25,10 @@ int create_window(SDL_Window *screen, SDL_Renderer *renderer,
 
     renderer = SDL_CreateRenderer(screen, -1, SDL_RENDERER_SOFTWARE);
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 1);
+    texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32,
+                                SDL_TEXTUREACCESS_STREAMING, WIN_W, WIN_H);
     SDL_RenderClear(renderer);
     SDL_RenderPresent(renderer);
-
-    texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32,
-                                SDL_TEXTUREACCESS_TARGET, WIN_W, WIN_H);
-    SDL_RenderCopy(renderer, texture, NULL, NULL);
-    SDL_RenderClear(renderer);
-
 
     return 0;
 }
@@ -43,14 +41,16 @@ void destroy_window(SDL_Window *screen, SDL_Renderer *renderer,
     SDL_Quit();
 }
 
-void draw_to_window(SDL_Renderer *renderer, SDL_Texture *texture) {
-    uint32_t *pixels = malloc(2048 * 4);
+
+void draw_to_window(SDL_Renderer *renderer, SDL_Texture *texture,
+                    uint32_t *pixels) {
 
     for (int i = 0; i < 2048; i++) {
-        pixels[i] = ((int32_t)chip8.display[i] << 23) >> 23;
+        pixels[i] = ((int32_t)chip8.display[i] << 31) >> 31;
     }
 
-    SDL_UpdateTexture(texture, NULL, pixels, WIN_W * sizeof(uint32_t));
+    SDL_UpdateTexture(texture, NULL, pixels, WIN_W * 4);
     SDL_RenderCopy(renderer, texture, NULL, NULL);
     SDL_RenderPresent(renderer);
+    print_screen();
 }

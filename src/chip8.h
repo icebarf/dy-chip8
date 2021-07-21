@@ -31,28 +31,26 @@
 #define Push(x) chip8.stack[++top] = x
 
 typedef struct chip8_t {
-    uint8_t display[WIN_W * WIN_H]; /* Display */
-    uint8_t keyboard[KEY_S];        /* 16 Hexdecimal keys */
+    uint8_t display[WIN_W * WIN_H];
+    uint8_t draw;
+    uint32_t pixels[2048];
+    uint8_t keyboard[KEY_S];
 
-    uint8_t
-        key_states[KEY_S]; /* Set to whichever key is being pressed - 1 or 0 */
-    uint8_t current_key;   /* Set to the value of the key that is pressed */
+    uint8_t key_states[KEY_S];
+    uint8_t current_key;
 
-    uint8_t fontset[FONT_S]; /* Holds address of each character's font byte */
+    uint8_t fontset[FONT_S];
 
-    uint8_t memory[MEMORY_S]; /* 4 kb memory */
-    uint16_t PC;              /* Program counter, points at next instruction */
-    uint16_t index;           /* Index register, points at any
-                               * instruction in memory */
+    uint8_t memory[MEMORY_S];
+    uint16_t PC;
+    uint16_t index;
 
-    uint16_t stack[STACK_S]; /* Stack to hold 16 - 2 Byte instructions */
+    uint16_t stack[STACK_S];
 
-    uint8_t registers[REGISTERS_S]; /* 16, 8-bit general purpose
-                                     * registers from V0 to VF */
+    uint8_t registers[REGISTERS_S];
 
-    uint8_t delay_timer; /* Delay timer */
-    uint8_t sound_timer; /* Sound timer */
-    bool draw;
+    uint8_t delay_timer;
+    uint8_t sound_timer;
 } chip8_t;
 
 /* Enumaerated Type for accessing keyboard */

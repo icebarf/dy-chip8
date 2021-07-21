@@ -9,6 +9,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* NEEDS REFACTORING */
+
 
 /* Variables for emulator */
 chip8_t chip8 = {0};
@@ -47,44 +49,74 @@ uint8_t keypad[16] = {
 /* SDL Input Handler inline Routine */
 static inline void handle_input(SDL_Event *event) {
     /* Row 1 */
-    if (event->key.keysym.sym == SDLK_1) {
+    switch (event->key.keysym.sym) {
+    case SDLK_1: {
         chip8.key_states[one_k] = 1;
-    } else if (event->key.keysym.sym == SDLK_2) {
+        break;
+    }
+    case SDLK_2: {
         chip8.key_states[two_k] = 1;
-    } else if (event->key.keysym.sym == SDLK_3) {
+        break;
+    }
+    case SDLK_3: {
         chip8.key_states[three_k] = 1;
-    } else if (event->key.keysym.sym == SDLK_4) {
+        break;
+    }
+    case SDLK_4: {
         chip8.key_states[C_k] = 1;
+        break;
     }
-    /* Row 2 */
-    else if (event->key.keysym.sym == SDLK_q) {
+        /* Row 2 */
+    case SDLK_q: {
         chip8.key_states[four_k] = 1;
-    } else if (event->key.keysym.sym == SDLK_w) {
-        chip8.key_states[five_k] = 1;
-    } else if (event->key.keysym.sym == SDLK_e) {
-        chip8.key_states[six_k] = 1;
-    } else if (event->key.keysym.sym == SDLK_r) {
-        chip8.key_states[D_k] = 1;
+        break;
     }
-    /* Row 3 */
-    else if (event->key.keysym.sym == SDLK_a) {
+    case SDLK_w: {
+        chip8.key_states[five_k] = 1;
+        break;
+    }
+    case SDLK_e: {
+        chip8.key_states[six_k] = 1;
+        break;
+    }
+    case SDLK_r: {
+        chip8.key_states[D_k] = 1;
+        break;
+    }
+        /* Row 3 */
+    case SDLK_a: {
         chip8.key_states[seven_k] = 1;
-    } else if (event->key.keysym.sym == SDLK_s) {
+        break;
+    }
+    case SDLK_s: {
         chip8.key_states[eight_k] = 1;
-    } else if (event->key.keysym.sym == SDLK_d) {
+        break;
+    }
+    case SDLK_d: {
         chip8.key_states[nine_k] = 1;
-    } else if (event->key.keysym.sym == SDLK_f) {
+        break;
+    }
+    case SDLK_f: {
         chip8.key_states[E_k] = 1;
+        break;
     }
     /* Row 4 */
-    else if (event->key.keysym.sym == SDLK_z) {
+    case SDLK_z: {
         chip8.key_states[A_k] = 1;
-    } else if (event->key.keysym.sym == SDLK_x) {
+        break;
+    }
+    case SDLK_x: {
         chip8.key_states[zero_k] = 1;
-    } else if (event->key.keysym.sym == SDLK_c) {
+        break;
+    }
+    case SDLK_c: {
         chip8.key_states[B_k] = 1;
-    } else if (event->key.keysym.sym == SDLK_v) {
+        break;
+    }
+    case SDLK_v: {
         chip8.key_states[F_k] = 1;
+        break;
+    }
     }
 }
 
@@ -420,21 +452,20 @@ void decode_and_execute() {
     case 0x0d: {
         uint16_t pixel;
         chip8.registers[0xF] = 0;
-        /* for N bytes */
-        for (int height = 0; height < chip8.registers[operand_right];
-             height++) {
-            /* get memory pointed to by index sequentially */
+
+        for (int height = 0; height < operand_right; height++) {
             pixel = chip8.memory[chip8.index + height];
-            /* For each row */
+
             for (int width = 0; width < 8; width++) {
                 if ((pixel & (0x80 >> width)) != 0) {
-
-                    if (chip8.display[(height + chip8.registers[operand_Y]) * 64
-                                      + (width + chip8.registers[operand_X])]) {
+                    if (chip8.display[((operand_X & 64) + width
+                                       + ((operand_Y & 64) + height) * WIN_W)]
+                        == 1) {
                         chip8.registers[0xF] = 1;
                     }
-                    chip8.display[(height + chip8.registers[operand_Y]) * 64
-                                  + (width + operand_X)]
+
+                    chip8.display[((operand_X & 64) + width
+                                   + ((operand_Y & 64) + height) * WIN_W)]
                         ^= 1;
                 }
             }
@@ -664,7 +695,7 @@ int main(int argc, char **argv) {
         }
 
         if (chip8.draw) {
-            draw_to_window(renderer, texture);
+            draw_to_window(renderer, texture, chip8.pixels);
             chip8.draw = false;
         }
         fetch();
