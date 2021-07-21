@@ -58,7 +58,10 @@ void draw_to_window(SDL_Renderer *renderer, SDL_Texture *texture,
                     uint32_t *pixels) {
 
     for (int i = 0; i < 2048; i++) {
-        pixels[i] = 0x000000FF;
+        if (chip8.display[i])
+            pixels[i] = 0x000000FF;
+        else
+            pixels[i] = 0x808080FF;
     }
 
     SDL_UpdateTexture(texture, NULL, pixels, WIN_W * 4);
