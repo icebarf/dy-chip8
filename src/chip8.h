@@ -50,6 +50,7 @@ typedef struct chip8_t {
 
     uint8_t delay_timer;
     uint8_t sound_timer;
+    uint8_t beep;
 } chip8_t;
 
 /* Enumaerated Type for accessing keyboard */

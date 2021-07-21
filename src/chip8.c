@@ -649,9 +649,9 @@ int main(int argc, char **argv) {
     srand(time(NULL));
 
     /* SDL */
-    SDL_Window *screen = NULL;
-    SDL_Renderer *renderer = NULL;
-    SDL_Texture *texture = NULL;
+    extern SDL_Window *screen;
+    extern SDL_Renderer *renderer;
+    extern SDL_Texture *texture;
     SDL_Event event;
 
     create_window(screen, renderer, texture);
@@ -694,7 +694,7 @@ int main(int argc, char **argv) {
         }
 
         if (chip8.draw) {
-            draw_to_window(renderer, texture, chip8.pixels);
+            draw_to_window(chip8.pixels);
             chip8.draw = false;
         }
         fetch();
@@ -705,9 +705,8 @@ int main(int argc, char **argv) {
         }
         if (chip8.sound_timer > 0) {
             --chip8.sound_timer;
+            chip8.beep = 1;
         }
-
-        usleep(1);
     }
     printf("\n\nFinal Screen Print\n");
     print_screen();

@@ -9,15 +9,18 @@
 
 extern chip8_t chip8;
 
-int create_window(SDL_Window *screen, SDL_Renderer *renderer,
-                  SDL_Texture *texture) {
+SDL_Window *screen;
+SDL_Renderer *renderer;
+SDL_Texture *texture;
+
+int create_window() {
     /* Initialise SDL Video and create Window, Renderer */
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         fprintf(stderr, "Could not init SDL: %s\n", SDL_GetError());
         return 1;
     }
     screen
-        = SDL_CreateWindow("Kuro CHIP-8 Emulator", SDL_WINDOWPOS_CENTERED,
+        = SDL_CreateWindow("DY CHIP-8 Interpreter", SDL_WINDOWPOS_CENTERED,
                            SDL_WINDOWPOS_CENTERED, WIN_W * 20, WIN_H * 20, 0);
     if (!screen) {
         fprintf(stderr, "Could not create window: %s\n", SDL_GetError());
@@ -31,7 +34,6 @@ int create_window(SDL_Window *screen, SDL_Renderer *renderer,
                                 SDL_TEXTUREACCESS_STREAMING, WIN_W, WIN_H);
 
     /* Set Texture to a solid color */
-    int pitch;
     uint32_t *pixels = malloc(2048 * 4);
 
     for (int i = 0; i < WIN_W * WIN_H; i++) {
@@ -45,8 +47,7 @@ int create_window(SDL_Window *screen, SDL_Renderer *renderer,
     return 0;
 }
 
-void destroy_window(SDL_Window *screen, SDL_Renderer *renderer,
-                    SDL_Texture *texture) {
+void destroy_window() {
     SDL_DestroyTexture(texture);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(screen);
@@ -54,18 +55,20 @@ void destroy_window(SDL_Window *screen, SDL_Renderer *renderer,
 }
 
 
-void draw_to_window(SDL_Renderer *renderer, SDL_Texture *texture,
-                    uint32_t *pixels) {
+void draw_to_window(uint32_t *pixels) {
 
     for (int i = 0; i < 2048; i++) {
         if (chip8.display[i] == 0)
             pixels[i] = 0x000000FF;
-        else
-            pixels[i] = 0x808080FF;
+        else {
+            pixels[i] = 0xFFFFFFFF;
+        }
     }
+
     SDL_RenderClear(renderer);
     SDL_UpdateTexture(texture, NULL, pixels, WIN_W * 4);
     SDL_RenderCopy(renderer, texture, NULL, NULL);
     SDL_RenderPresent(renderer);
-    print_screen();
+
+    usleep(1);
 }

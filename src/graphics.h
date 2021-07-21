@@ -6,11 +6,8 @@
 #include <SDL2/SDL_video.h>
 #include <sys/types.h>
 
-int create_window(SDL_Window *screen, SDL_Renderer *renderer,
-                  SDL_Texture *texture);
+int create_window();
 
-void destroy_window(SDL_Window *screen, SDL_Renderer *renderer,
-                    SDL_Texture *texture);
+void destroy_window();
 
-void draw_to_window(SDL_Renderer *renderer, SDL_Texture *texture,
-                    uint32_t *pixels);
+void draw_to_window(uint32_t *pixels);
