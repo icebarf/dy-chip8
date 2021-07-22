@@ -35,3 +35,5 @@ $ dy <path/to/rom/file> <path/to/sound/file>
 
 ### Compile the emulator with gdb symbols only
 - make emu_gdb
+
+> Note: This will not compile for windows. If you can make nanosleep() available for your platform, then you can compile this.
