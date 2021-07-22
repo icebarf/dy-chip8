@@ -315,7 +315,7 @@ void decode_and_execute() {
             /* 8XYE*/
         case 0xe:
             /* Check MSB is set or not, if set, set VF to 1 otherwise 0 */
-            if (chip8.registers[operand_X] & 0b10000000) {
+            if (chip8.registers[operand_X] & (1 << 7)) {
                 chip8.registers[0xF] = 0x1;
             } else {
                 chip8.registers[0xF] = 0x0;
@@ -355,10 +355,10 @@ void decode_and_execute() {
         break;
 
 
-    /* BNNN*/
+    /* BNNN */
     case 0x0b:
-        /* Set program counter NNN + V0 */
-        chip8.PC = NNN + chip8.registers[0];
+        /* Set program counter NNN + VX */
+        chip8.PC = NNN + chip8.registers[operand_X];
 #ifdef DEBUG
         printf("JMP V0, 0x%03x\n", NNN);
 #endif
@@ -586,8 +586,10 @@ int main(int argc, char **argv) {
         return 0;
     }
     srand(time(NULL));
+
+    /* Run at 700 Mhz */
     tim.tv_sec = 0;
-    tim.tv_nsec = 1250000;
+    tim.tv_nsec = 1428571;
 
     /* SDL */
     extern SDL_Window *screen;
@@ -604,8 +606,8 @@ int main(int argc, char **argv) {
 
     /* Load fontset into memory at 0x0000 */
     memcpy(&chip8.memory, fontset, 80);
-    uint8_t font_mem_loc[16] = {0x0,  0x6,  0xb,  0x10, 0x15, 0x1a, 0x1f, 0x24,
-                                0x29, 0x2e, 0x33, 0x38, 0x3D, 0x42, 0x47, 0x4C};
+    uint8_t font_mem_loc[16] = {0x0,  0x5,  0xa,  0xf,  0x14, 0x19, 0x1e, 0x23,
+                                0x28, 0x2d, 0x32, 0x37, 0x3c, 0x41, 0x46, 0x4b};
     memcpy(&chip8.fontset, font_mem_loc, 16);
 
     /* Set program counter */
