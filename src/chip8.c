@@ -368,7 +368,7 @@ void decode_and_execute() {
     case 0x0c:
         /* generate a random number between 0 and 255 and do Bitwise AND with KK
          */
-        chip8.registers[operand_X] = (rand() % (256) + 1) & KK;
+        chip8.registers[operand_X] = (rand() % 256) & KK;
 #ifdef DEBUG
         printf("RND V%01x, 0x%02x\n", operand_X, KK);
 #endif
@@ -413,7 +413,7 @@ void decode_and_execute() {
         /* EX9E */
         case 0x9e: {
             /* Increment PC if key is in down state - Down means pressed or 1*/
-            if (chip8.key_states[chip8.registers[operand_X]] == 1) {
+            if (chip8.key_states[chip8.registers[operand_X]] != 0) {
                 chip8.PC += 2;
             }
             break;
@@ -462,7 +462,7 @@ void decode_and_execute() {
             chip8.PC -= 2;
             for (int i = 0; i < 16; i++) {
                 if (chip8.key_states[i] == 1) {
-                    chip8.registers[operand_X] = chip8.keyboard[i];
+                    chip8.registers[operand_X] = i;
                     chip8.PC += 2;
                 }
             }

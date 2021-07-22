@@ -56,23 +56,20 @@ typedef struct chip8_t {
 /* Enumaerated Type for accessing keyboard */
 enum keys {
     /* 1 2 3 C */
+    zero_k,
     one_k,
     two_k,
     three_k,
-    C_k,
-    /* 4 5 6 D */
     four_k,
     five_k,
     six_k,
-    D_k,
-    /* 7 8 9 E */
     seven_k,
     eight_k,
     nine_k,
-    E_k,
-    /* A B 0 F */
     A_k,
-    zero_k,
     B_k,
+    C_k,
+    D_k,
+    E_k,
     F_k
 };
