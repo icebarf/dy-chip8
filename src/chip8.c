@@ -1,10 +1,12 @@
 #include "chip8.h"
 #include "debug.h"
 #include "graphics.h"
+#include "keyboard.h"
 #include "sound.h"
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_keycode.h>
 #include <SDL2/SDL_render.h>
+#include <SDL2/SDL_scancode.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -47,88 +49,6 @@ uint8_t keypad[16] = {
 
 };
 
-/* SDL Input Handler inline Routine */
-static inline void handle_input(SDL_Event *event) {
-    /* Row 1 */
-    switch (event->key.keysym.sym) {
-    case SDLK_1: {
-        chip8.key_states[one_k] = 1;
-        break;
-    }
-    case SDLK_2: {
-        chip8.key_states[two_k] = 1;
-        break;
-    }
-    case SDLK_3: {
-        chip8.key_states[three_k] = 1;
-        break;
-    }
-    case SDLK_4: {
-        chip8.key_states[C_k] = 1;
-        break;
-    }
-        /* Row 2 */
-    case SDLK_q: {
-        chip8.key_states[four_k] = 1;
-        break;
-    }
-    case SDLK_w: {
-        chip8.key_states[five_k] = 1;
-        break;
-    }
-    case SDLK_e: {
-        chip8.key_states[six_k] = 1;
-        break;
-    }
-    case SDLK_r: {
-        chip8.key_states[D_k] = 1;
-        break;
-    }
-        /* Row 3 */
-    case SDLK_a: {
-        chip8.key_states[seven_k] = 1;
-        break;
-    }
-    case SDLK_s: {
-        chip8.key_states[eight_k] = 1;
-        break;
-    }
-    case SDLK_d: {
-        chip8.key_states[nine_k] = 1;
-        break;
-    }
-    case SDLK_f: {
-        chip8.key_states[E_k] = 1;
-        break;
-    }
-    /* Row 4 */
-    case SDLK_z: {
-        chip8.key_states[A_k] = 1;
-        break;
-    }
-    case SDLK_x: {
-        chip8.key_states[zero_k] = 1;
-        break;
-    }
-    case SDLK_c: {
-        chip8.key_states[B_k] = 1;
-        break;
-    }
-    case SDLK_v: {
-        chip8.key_states[F_k] = 1;
-        break;
-    }
-    default: {
-        for (int i = 0; i < 16; i += 4) {
-            /* If no key is being pressed, set state to zero */
-            chip8.key_states[i] = 0;
-            chip8.key_states[i + 1] = 0;
-            chip8.key_states[i + 2] = 0;
-            chip8.key_states[i + 3] = 0;
-        }
-    }
-    }
-}
 
 /* Emulator routines */
 
@@ -178,7 +98,7 @@ void decode_and_execute() {
     /* lower byte */
     uint8_t lb = (opcode & 0xff);
     uint8_t operand_Y = (lb >> 4);
-    uint8_t operand_right = (lb & 0x0f);
+    uint8_t operand_N = (lb & 0x0f);
     uint16_t KK = lb;
 
     uint16_t NNN = operand_X << 8 | KK;
@@ -242,7 +162,7 @@ void decode_and_execute() {
     /* 3XKK instruction */
     case 0x03:
         /* If VX register is equal to KK then skip current instruction */
-        if (!(chip8.registers[operand_X] ^ KK)) {
+        if ((chip8.registers[operand_X] ^ KK) == 0) {
             chip8.PC += 2;
         }
 #ifdef DEBUG
@@ -267,7 +187,7 @@ void decode_and_execute() {
     /* 5XY0 instruction */
     case 0x05:
         /* If VX is equal to VY register then skip current instruction */
-        if (!(chip8.registers[operand_X] ^ chip8.registers[operand_Y])) {
+        if ((chip8.registers[operand_X] ^ chip8.registers[operand_Y]) == 0) {
             chip8.PC += 2;
         }
 #ifdef DEBUG
@@ -298,7 +218,7 @@ void decode_and_execute() {
 
     /* 08 instructions */
     case 0x08:
-        switch (operand_right) {
+        switch (operand_N) {
         /* 8XY0 instruction */
         case 0x0:
             /* Put value in VY to VX */
@@ -462,7 +382,7 @@ void decode_and_execute() {
         uint8_t X = chip8.registers[operand_X] & 63;
         uint8_t Y = chip8.registers[operand_Y] & 31;
 
-        for (int height = 0; height < operand_right; height++) {
+        for (int height = 0; height < operand_N; height++) {
             pixel = chip8.memory[chip8.index + height];
 
             for (int width = 0; width < 8; width++) {
@@ -479,7 +399,7 @@ void decode_and_execute() {
         chip8.draw = true;
     }
 #ifdef DEBUG
-        printf("DRW V%01x, V%01x, %01x\n", operand_X, operand_Y, operand_right);
+        printf("DRW V%01x, V%01x, %01x\n", operand_X, operand_Y, operand_N);
         /*print_screen();*/
 #endif
         break;
@@ -701,14 +621,17 @@ int main(int argc, char **argv) {
     while (run) {
 
         SDL_PollEvent(&event);
-        switch (event.type) {
 
+        switch (event.type) {
         case SDL_QUIT:
             run = false;
             break;
         case SDL_KEYDOWN: {
-            handle_input(&event);
+            handle_input(1, &event);
             break;
+        }
+        case SDL_KEYUP: {
+            handle_input(0, &event);
         }
         }
 
@@ -722,10 +645,12 @@ int main(int argc, char **argv) {
         if (chip8.delay_timer > 0) {
             --chip8.delay_timer;
         }
+
         if (chip8.sound_timer > 0) {
             play_sound();
             --chip8.sound_timer;
         }
+        usleep(100);
     }
 #ifdef DEBUG
     printf("\n\nFinal Screen Print\n");

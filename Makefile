@@ -4,15 +4,15 @@ FLAGS = -O2 -lSDL2_mixer
 SDL = `pkg-config --cflags --libs sdl2`
 emu: src/*.c src/*.h
 	mkdir -p bin
-	$(CC) $(WARN) $(FLAGS) src/chip8.c src/graphics.c src/sound.c src/debug.c -o bin/emu $(SDL)
+	$(CC) $(WARN) $(FLAGS) src/chip8.c src/graphics.c src/sound.c src/keyboard.c src/debug.c -o bin/emu $(SDL)
 
 emu_debug: src/*.c src/*.h
 	mkdir -p bin
-	$(CC) $(WARN) -lSDL2_mixer -DDEBUG src/chip8.c src/graphics.c src/sound.c src/debug.c -o bin/emu $(SDL) -g
+	$(CC) $(WARN) -lSDL2_mixer -DDEBUG src/chip8.c src/graphics.c src/sound.c src/keyboard.c src/debug.c -o bin/emu $(SDL) -g
 
 emu_gdb: src/*.c src/*.h
 	mkdir -p bin
-	$(CC) $(WARN) -lSDL2_mixer src/chip8.c src/graphics.c src/sound.c src/debug.c -o bin/emu $(SDL) -g
+	$(CC) $(WARN) -lSDL2_mixer src/chip8.c src/graphics.c src/sound.c src/keyboard.c src/debug.c -o bin/emu $(SDL) -g
 
 clean:
 	rm bin/*

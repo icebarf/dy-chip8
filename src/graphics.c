@@ -69,6 +69,4 @@ void draw_to_window(uint32_t *pixels) {
     SDL_UpdateTexture(texture, NULL, pixels, WIN_W * 4);
     SDL_RenderCopy(renderer, texture, NULL, NULL);
     SDL_RenderPresent(renderer);
-
-    usleep(1);
 }
