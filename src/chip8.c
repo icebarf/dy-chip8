@@ -20,6 +20,7 @@ chip8_t chip8 = {0};
 uint16_t opcode_main, opcode;
 int read_size;
 int top = -1;
+struct timespec tim;
 
 /* Fontset for chip8 */
 uint8_t fontset[80] = {
@@ -585,6 +586,8 @@ int main(int argc, char **argv) {
         return 0;
     }
     srand(time(NULL));
+    tim.tv_sec = 0;
+    tim.tv_nsec = 1250000;
 
     /* SDL */
     extern SDL_Window *screen;
@@ -650,7 +653,8 @@ int main(int argc, char **argv) {
             play_sound();
             --chip8.sound_timer;
         }
-        usleep(100);
+
+        nanosleep(&tim, NULL);
     }
 #ifdef DEBUG
     printf("\n\nFinal Screen Print\n");
