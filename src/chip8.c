@@ -42,15 +42,6 @@ uint8_t fontset[80] = {
     0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 };
 
-uint8_t keypad[16] = {
-    0x01, 0x02, 0x03, 0x0C, // 1 2 3 4
-    0x04, 0x05, 0x06, 0x0D, // Q W E R
-    0x07, 0x08, 0x09, 0x0E, // A S D F
-    0x0A, 0x00, 0x0B, 0x0F  // Z X C V
-
-};
-
-
 /* Emulator routines */
 
 int fetchrom(char *romname) {
@@ -507,7 +498,7 @@ void decode_and_execute() {
 
         case 0x29:
             /* Set index to sprite's address stored in VX*/
-            chip8.index = chip8.memory[chip8.fontset[operand_X]];
+            chip8.index = (chip8.registers[operand_X] & 0xF) * 5;
 #ifdef DEBUG
             printf("F%01x29 - LD F, V%0x\n", operand_X, operand_X);
 #endif
@@ -581,15 +572,15 @@ void decode_and_execute() {
 
 int main(int argc, char **argv) {
 
-    if (argc < 2) {
-        printf("Usage: emu \"romfilename\"\n");
+    if (argc < 3) {
+        printf("Usage: dy <rom path> full_path_to_sound\n");
         return 0;
     }
     srand(time(NULL));
 
     /* Run at 700 Mhz */
     tim.tv_sec = 0;
-    tim.tv_nsec = 1428571;
+    tim.tv_nsec = 1000000;
 
     /* SDL */
     extern SDL_Window *screen;
@@ -598,7 +589,7 @@ int main(int argc, char **argv) {
     SDL_Event event;
 
     create_window(screen, renderer, texture);
-    init_sound();
+    init_sound(argv[2]);
 
     /* Variables to be used in emulator */
     char *romname = argv[1];
@@ -606,9 +597,11 @@ int main(int argc, char **argv) {
 
     /* Load fontset into memory at 0x0000 */
     memcpy(&chip8.memory, fontset, 80);
-    uint8_t font_mem_loc[16] = {0x0,  0x5,  0xa,  0xf,  0x14, 0x19, 0x1e, 0x23,
-                                0x28, 0x2d, 0x32, 0x37, 0x3c, 0x41, 0x46, 0x4b};
-    memcpy(&chip8.fontset, font_mem_loc, 16);
+    int j = 0;
+    for (int i = 0; i < 80; i += 5) {
+        chip8.fontset[j++] = i;
+    }
+    printf("\n%d - %x - %x\n", j, chip8.fontset[15], chip8.memory[0x4f]);
 
     /* Set program counter */
     chip8.PC = 0x0200;
