@@ -22,6 +22,9 @@ $ dy <path/to/rom/file> <path/to/sound/file>
 ### Compile the emulator
 - make emu
 
+### Compile the emulator and install
+- make emu_install
+
 ### Compile the emulator with optimizations
 - make emu_opti
 

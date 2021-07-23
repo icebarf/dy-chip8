@@ -96,7 +96,7 @@ void decode_and_execute() {
     uint16_t NNN = operand_X << 8 | KK;
 
 #ifdef DEBUG
-    printf("0x%04x    0x%04x         ", chip8.PC - 2, opcode);
+    printf("0x%04x      %04x         ", chip8.PC - 2, opcode);
 #endif
 
 
@@ -107,12 +107,14 @@ void decode_and_execute() {
 
         /* 00E0 */
         case 0xe0:
-            memset(chip8.display, 0, WIN_W * WIN_H);
+            memset(chip8.display, 0, (WIN_W * WIN_H));
             chip8.draw = true;
 #ifdef DEBUG
             printf("CLS\n");
 #endif
             break;
+
+
         /* 00EE instruction */
         case 0xee:
             /* return from call */
@@ -219,6 +221,8 @@ void decode_and_execute() {
             printf("LD V%01x, V%01x\n", operand_X, operand_Y);
 #endif
             break;
+
+
         /* 8XY1 instruction */
         case 0x1:
             /* Bitwise OR on VX and VY then store result in VX */
@@ -228,6 +232,8 @@ void decode_and_execute() {
             printf("OR V%01x, V%01x\n", operand_X, operand_Y);
 #endif
             break;
+
+
         /* 8XY2 instruction */
         case 0x2:
             /* Bitwise AND on VX and VY then store result in VX */
@@ -277,16 +283,19 @@ void decode_and_execute() {
         /* 8XY6 instrcution */
         case 0x6:
             /* Check LSB is set or not, if set, set VF to 1 otherwise 0 */
-            if (chip8.registers[operand_X] & 0b00000001) {
+            if (chip8.registers[operand_X] & (1 >> 7)) {
                 chip8.registers[0xF] = 0x1;
             } else {
                 chip8.registers[0xF] = 0x0;
             }
+
             chip8.registers[operand_X] = chip8.registers[operand_X] >> 1;
 #ifdef DEBUG
             printf("SHR V%01x, V%01x\n", operand_X, operand_Y);
 #endif
             break;
+
+
         /* 8XY7 instruction */
         case 0x7:
             /* Sub VX from VY and set VF */
@@ -298,12 +307,14 @@ void decode_and_execute() {
             } else {
                 chip8.registers[0xF] = 0x0;
             }
+
 #ifdef DEBUG
             printf("SUBN V%01x, V%01x\n", operand_X, operand_Y);
 #endif
             break;
 
-            /* 8XYE*/
+
+        /* 8XYE*/
         case 0xe:
             /* Check MSB is set or not, if set, set VF to 1 otherwise 0 */
             if (chip8.registers[operand_X] & (1 << 7)) {
@@ -327,7 +338,7 @@ void decode_and_execute() {
     /* 9XY0 */
     case 0x09:
         /* if VX is not equal to VY then skip instruction */
-        if (chip8.registers[operand_X] ^ chip8.registers[operand_Y]) {
+        if ((chip8.registers[operand_X] ^ chip8.registers[operand_Y])) {
             chip8.PC += 2;
         }
 #ifdef DEBUG
@@ -349,7 +360,7 @@ void decode_and_execute() {
     /* BNNN */
     case 0x0b:
         /* Set program counter NNN + VX */
-        chip8.PC = NNN + chip8.registers[operand_X];
+        chip8.PC = NNN + chip8.registers[0];
 #ifdef DEBUG
         printf("JMP V0, 0x%03x\n", NNN);
 #endif
@@ -401,11 +412,10 @@ void decode_and_execute() {
     case 0x0e:
 
         switch (KK) {
-
         /* EX9E */
         case 0x9e: {
             /* Increment PC if key is in down state - Down means pressed or 1*/
-            if (chip8.key_states[chip8.registers[operand_X]] != 0) {
+            if (chip8.key_states[chip8.registers[operand_X]] == 1) {
                 chip8.PC += 2;
             }
             break;
@@ -450,7 +460,7 @@ void decode_and_execute() {
 
         case 0x0a:
             /* Until any key is pressed, pause exec, after press set VX to key
-             */
+             * and continue */
             chip8.PC -= 2;
             for (int i = 0; i < 16; i++) {
                 if (chip8.key_states[i] == 1) {
@@ -471,6 +481,8 @@ void decode_and_execute() {
             printf("LD DT, V%0x\n", operand_X);
 #endif
             break;
+
+
         case 0x18:
             /* Set Sound timer (ST) to Vx */
             chip8.sound_timer = chip8.registers[operand_X];
@@ -580,7 +592,7 @@ int main(int argc, char **argv) {
 
     /* Run at 700 Mhz */
     tim.tv_sec = 0;
-    tim.tv_nsec = 1000000;
+    tim.tv_nsec = 1428571;
 
     /* SDL */
     extern SDL_Window *screen;
@@ -601,7 +613,6 @@ int main(int argc, char **argv) {
     for (int i = 0; i < 80; i += 5) {
         chip8.fontset[j++] = i;
     }
-    printf("\n%d - %x - %x\n", j, chip8.fontset[15], chip8.memory[0x4f]);
 
     /* Set program counter */
     chip8.PC = 0x0200;
@@ -617,7 +628,7 @@ int main(int argc, char **argv) {
 
     bool run = true;
     while (run) {
-
+        /* SDL Input handling and graphics */
         SDL_PollEvent(&event);
 
         switch (event.type) {
@@ -637,9 +648,17 @@ int main(int argc, char **argv) {
             draw_to_window(chip8.pixels);
             chip8.draw = false;
         }
-        fetch();
-        decode_and_execute();
 
+        /* Main loop */
+        while (1) {
+            fetch();
+            decode_and_execute();
+            nanosleep(&tim, NULL);
+
+            break;
+        }
+
+        /* Timers */
         if (chip8.delay_timer > 0) {
             --chip8.delay_timer;
         }
@@ -648,13 +667,13 @@ int main(int argc, char **argv) {
             play_sound();
             --chip8.sound_timer;
         }
-
-        nanosleep(&tim, NULL);
     }
+
 #ifdef DEBUG
     printf("\n\nFinal Screen Print\n");
     print_screen();
 #endif
+
     destroy_sound();
     destroy_window(screen, renderer, texture);
     return 0;

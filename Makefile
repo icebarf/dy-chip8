@@ -22,12 +22,22 @@ emu_gdb: src/*.c src/*.h
 
 emu_install: src/*.c src/*.h
 	mkdir -p bin
+	$(CC) $(WARN) -lSDL2_mixer src/chip8.c src/graphics.c src/sound.c src/keyboard.c src/debug.c -o bin/dy $(SDL)	
+	chmod 755 bin/dy
+	mkdir -p $$HOME/.config
+	mkdir -p $$HOME/.config/dy-chip8
+	mkdir -p $$HOME/.config/dy-chip8/sound
+	cp sound/edited_alarm.wav $$HOME/.config/dy-chip8/sound/edited_alarm.wav
+	sudo mv bin/dy /usr/bin/
+
+emu_opti_install: src/*.c src/*.h
+	mkdir -p bin
 	$(CC) $(WARN) $(FLAGS) src/chip8.c src/graphics.c src/sound.c src/keyboard.c src/debug.c -o bin/dy $(SDL)	
 	chmod 755 bin/dy
 	mkdir -p $$HOME/.config
 	mkdir -p $$HOME/.config/dy-chip8
 	mkdir -p $$HOME/.config/dy-chip8/sound
-	cp src/sound/edited_alarm.wav $$HOME/.config/dy-chip8/sound/edited_alarm.wav
+	cp sound/edited_alarm.wav $$HOME/.config/dy-chip8/sound/edited_alarm.wav
 	sudo mv bin/dy /usr/bin/
 
 clean:
