@@ -243,6 +243,8 @@ void decode_and_execute() {
             printf("AND V%01x, V%01x\n", operand_X, operand_Y);
 #endif
             break;
+
+
         /* 8XY3 instruction */
         case 0x3:
             /* Bitwise XOR on VX and VY then store result in VX */
@@ -252,6 +254,8 @@ void decode_and_execute() {
             printf("XOR V%01x, V%01x\n", operand_X, operand_Y);
 #endif
             break;
+
+
         /* 8XY4 instruction */
         case 0x4:
             /* ADD VX and VY and set VF */
@@ -267,23 +271,30 @@ void decode_and_execute() {
             printf("ADD V%01x, V%01x\n", operand_X, operand_Y);
 #endif
             break;
+
+
         /* 8XY5 instruction */
-        case 0x5:
+        case 0x5: {
             /* Sub VY from VX and set VF */
+            chip8.registers[0xF] = 1;
+            uint8_t X, Y;
+            X = chip8.registers[operand_X];
+            Y = chip8.registers[operand_Y];
+
             chip8.registers[operand_X] -= chip8.registers[operand_Y];
-            if (chip8.registers[operand_X] > chip8.registers[operand_Y]) {
-                chip8.registers[0xF] = 0x1;
-            } else {
-                chip8.registers[0xF] = 0x1;
+            if (X < Y) {
+                chip8.registers[0xF] = 0;
             }
 #ifdef DEBUG
             printf("SUB V%01x, V%01x\n", operand_X, operand_Y);
 #endif
             break;
+        }
+
         /* 8XY6 instrcution */
         case 0x6:
             /* Check LSB is set or not, if set, set VF to 1 otherwise 0 */
-            if (chip8.registers[operand_X] & (1 >> 7)) {
+            if (chip8.registers[operand_X] & 1) {
                 chip8.registers[0xF] = 0x1;
             } else {
                 chip8.registers[0xF] = 0x0;
@@ -297,22 +308,24 @@ void decode_and_execute() {
 
 
         /* 8XY7 instruction */
-        case 0x7:
+        case 0x7: {
             /* Sub VX from VY and set VF */
+            chip8.registers[0xF] = 1;
+            uint8_t X, Y;
+            X = chip8.registers[operand_X];
+            Y = chip8.registers[operand_Y];
             chip8.registers[operand_X]
                 = chip8.registers[operand_Y] - chip8.registers[operand_X];
 
-            if (chip8.registers[operand_Y] > chip8.registers[operand_X]) {
-                chip8.registers[0xF] = 0x1;
-            } else {
-                chip8.registers[0xF] = 0x0;
+            if (X > Y) {
+                chip8.registers[0xF] = 0;
             }
 
 #ifdef DEBUG
             printf("SUBN V%01x, V%01x\n", operand_X, operand_Y);
 #endif
             break;
-
+        }
 
         /* 8XYE*/
         case 0xe:

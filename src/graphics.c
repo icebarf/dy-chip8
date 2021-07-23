@@ -37,7 +37,7 @@ int create_window() {
     uint32_t *pixels = malloc(2048 * 4);
 
     for (int i = 0; i < WIN_W * WIN_H; i++) {
-        pixels[i] = 0xabc1d9ff;
+        pixels[i] = 0x000000ff;
     }
 
     SDL_UpdateTexture(texture, NULL, pixels, WIN_H * 4);
@@ -59,9 +59,9 @@ void draw_to_window(uint32_t *pixels) {
 
     for (int i = 0; i < 2048; i++) {
         if (chip8.display[i] == 0)
-            pixels[i] = 0xabc1d9ff;
+            pixels[i] = 0x000000ff;
         else {
-            pixels[i] = 0x1443deff;
+            pixels[i] = 0x33ff00ff;
         }
     }
 
