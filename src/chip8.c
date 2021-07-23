@@ -618,6 +618,7 @@ int main(int argc, char **argv) {
     }
     srand(time(NULL));
 
+
     /* Run at 700 Mhz by default*/
     struct timespec tim;
     tim.tv_sec = 0;
@@ -628,7 +629,7 @@ int main(int argc, char **argv) {
     long int prev_time;
     long int now_time = gettimeofday(&tv, NULL);
     if (now_time == 0) {
-        now_time = ((long int)tv.tv_sec * 1E6) + ((long int)tv.tv_usec);
+        now_time = ((long int)tv.tv_sec * 0x1E6) + ((long int)tv.tv_usec);
     }
 
     /* Flag verification */
@@ -707,13 +708,11 @@ int main(int argc, char **argv) {
             draw_to_window(chip8.pixels);
             chip8.draw = false;
         }
-        int i = 0;
 
         /* Main loop */
         while (1) {
             fetch();
             decode_and_execute();
-            i++;
             nanosleep(&tim, NULL);
 
             break;
