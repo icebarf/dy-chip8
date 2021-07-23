@@ -6,8 +6,10 @@ DY is a chip-8 interpreter (emulator) written in C. Graphics, Input, Sound have 
 - Runs at an oddball resolution of 1280*640
 - Sound
 - Specify core speed at runtime
-- Builtin Debugging to terminal
 - Default speed is 700 Hz
+- Builtin Debugging to terminal
+
+> Note: Timers aren't accurate
 
 ## Showcase
 
