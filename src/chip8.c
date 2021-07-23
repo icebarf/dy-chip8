@@ -4,6 +4,8 @@
 #include "keyboard.h"
 #include "sound.h"
 #include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/time.h>
 
 /* NEEDS REFACTORING */
@@ -11,7 +13,7 @@
 
 /* Variables for emulator */
 chip8_t chip8 = {0};
-uint16_t opcode_main, opcode;
+uint16_t opcode_main;
 int read_size;
 int top = -1;
 
@@ -75,13 +77,12 @@ static inline void fetch() {
 void decode_and_execute() {
 
     /* Set higher byte and instruction nibble */
-    opcode = opcode_main;
-    uint8_t hb = (opcode >> 8) & 0xff;
+    uint8_t hb = (opcode_main >> 8) & 0xff;
     uint8_t inst_nib = (hb >> 4);
     uint8_t operand_X = (hb & 0x0f);
 
     /* lower byte */
-    uint8_t lb = (opcode & 0xff);
+    uint8_t lb = (opcode_main & 0xff);
     uint8_t operand_Y = (lb >> 4);
     uint8_t operand_N = (lb & 0x0f);
     uint16_t KK = lb;
@@ -89,7 +90,7 @@ void decode_and_execute() {
     uint16_t NNN = operand_X << 8 | KK;
 
 #ifdef DEBUG
-    printf("0x%04x      %04x         ", chip8.PC - 2, opcode);
+    printf("0x%04x      %04x         ", chip8.PC - 2, opcode_main);
 #endif
 
 
@@ -594,8 +595,17 @@ void decode_and_execute() {
 
 
     default:
-        printf("Invalid instruction: %04x\n", opcode);
+        printf("Invalid instruction: %04x\n", opcode_main);
         break;
+    }
+}
+
+/* Suggested by a friend
+ * Call tick every 16.667 milliseconds */
+void tick() {
+    for (int i = 0; i < 10; i++) {
+        fetch();
+        decode_and_execute();
     }
 }
 
@@ -607,6 +617,7 @@ int main(int argc, char **argv) {
         return 0;
     }
     srand(time(NULL));
+
     /* Run at 700 Mhz by default*/
     struct timespec tim;
     tim.tv_sec = 0;
