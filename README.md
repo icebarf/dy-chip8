@@ -9,7 +9,7 @@ DY is a chip-8 interpreter (emulator) written in C. Graphics, Input, Sound have 
 - Default speed is 700 Hz
 - Builtin Debugging to terminal
 
-> Note: Timers aren't accurate
+> Note: Timers aren't accurate, as the loop runs all instructions and then sleeps for 1428571 nanoseconds, which is roughly 700Hz
 
 ## Showcase
 
