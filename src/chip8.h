@@ -1,15 +1,20 @@
 #pragma once
+#include <SDL2/SDL_events.h>
+#include <SDL2/SDL_keycode.h>
+#include <SDL2/SDL_render.h>
+#include <SDL2/SDL_scancode.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/types.h>
+#include <string.h>
+#include <sys/time.h>
 #include <time.h>
-#include <unistd.h>
+
 
 /* Display Pixel defines */
-#define TRUE ON
-#define FALSE OFF
+#define TRUE 1
+#define FALSE 0
 
 /* Window defines */
 #define WIN_W 64

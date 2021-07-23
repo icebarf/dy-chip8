@@ -3,14 +3,8 @@
 #include "graphics.h"
 #include "keyboard.h"
 #include "sound.h"
-#include <SDL2/SDL_events.h>
-#include <SDL2/SDL_keycode.h>
-#include <SDL2/SDL_render.h>
-#include <SDL2/SDL_scancode.h>
 #include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <sys/time.h>
 
 /* NEEDS REFACTORING */
 
@@ -20,7 +14,6 @@ chip8_t chip8 = {0};
 uint16_t opcode_main, opcode;
 int read_size;
 int top = -1;
-struct timespec tim;
 
 /* Fontset for chip8 */
 uint8_t fontset[80] = {
@@ -257,20 +250,27 @@ void decode_and_execute() {
 
 
         /* 8XY4 instruction */
-        case 0x4:
+        case 0x4: {
+
+            uint8_t X, Y;
+            X = chip8.registers[operand_X];
+            Y = chip8.registers[operand_Y];
+
             /* ADD VX and VY and set VF */
             chip8.registers[operand_X] += chip8.registers[operand_Y];
+
             /* Check for overflow and set the flag */
-            if (chip8.registers[operand_X]
-                > UINT8_MAX - chip8.registers[operand_Y]) {
+            if (X > UINT8_MAX - Y) {
                 chip8.registers[0xF] = 0x1;
             } else {
                 chip8.registers[0xF] = 0x0;
             }
+
 #ifdef DEBUG
             printf("ADD V%01x, V%01x\n", operand_X, operand_Y);
 #endif
             break;
+        }
 
 
         /* 8XY5 instruction */
@@ -505,20 +505,25 @@ void decode_and_execute() {
             break;
 
 
-        case 0x1E:
+        case 0x1E: {
+            uint8_t X, I;
+            X = chip8.registers[operand_X];
+            I = chip8.index;
+
             /* Add I and Vx and store in I */
             chip8.index += chip8.registers[operand_X];
 
-            /* Check for overflow and set VF */
-            if (chip8.index > 0x0FFF - chip8.registers[operand_X]) {
-                chip8.registers[0xF] = 0x1;
+            /* check for overflow */
+            if (I > UINT8_MAX - X) {
+                chip8.registers[0xF] = 1;
             } else {
-                chip8.registers[0xF] = 0x0;
+                chip8.registers[0xF] = 0;
             }
 #ifdef DEBUG
             printf("ADD I, V%0x\n", operand_X);
 #endif
             break;
+        }
 
 
         case 0x29:
@@ -603,8 +608,17 @@ int main(int argc, char **argv) {
     }
     srand(time(NULL));
     /* Run at 700 Mhz by default*/
+    struct timespec tim;
     tim.tv_sec = 0;
     tim.tv_nsec = 1428571;
+
+    /* timer stuff */
+    struct timeval tv;
+    long int prev_time;
+    long int now_time = gettimeofday(&tv, NULL);
+    if (now_time == 0) {
+        now_time = ((long int)tv.tv_sec * 1E6) + ((long int)tv.tv_usec);
+    }
 
     /* Flag verification */
     if (argc > 3) {
@@ -655,6 +669,13 @@ int main(int argc, char **argv) {
 
     bool run = true;
     while (run) {
+
+        /* Time stuff */
+        if (prev_time == 0) {
+            /* Assign prev_time value if running for the first itme */
+            prev_time = tv.tv_sec;
+        }
+
         /* SDL Input handling and graphics */
         SDL_PollEvent(&event);
 
