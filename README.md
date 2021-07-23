@@ -1,11 +1,12 @@
 # DY Chip-8
 
-DY is a chip-8 interpreter (emulator) written in C. Graphics, Input, Sound have been implemented with the help SDL2. The emulator runs at 700Mhz using nanosleep per loop cycle. It has the following features as of in 4 days of development time.
+DY is a chip-8 interpreter (emulator) written in C. Graphics, Input, Sound have been implemented with the help SDL2. The emulator runs at 1 Mhz using nanosleep per loop cycle. It has the following features as of in 4 days of development time.
 
 ## Features
 - Runs at an oddball resolution of 1280*640
-- Beep sound as with the original CHIP-8 interpreter
-- Printing memory, instruction disassembly and final screen state to terminal for debugging (WIP)
+- Sound
+- Specify core speed at runtime
+- Builtin Debugging to terminal
 
 ## Showcase
 
@@ -30,8 +31,19 @@ DY is a chip-8 interpreter (emulator) written in C. Graphics, Input, Sound have 
 
 ## Usage
 
+Run at default 1 Mhz or 1000 hz
 ```bash
 $ dy <path/to/rom/file> <path/to/sound/file>
+```
+
+Specify your own core speed
+```bash
+$ dy <path/to/rom/file> <path/to/sound/file> -hz <integral value>
+```
+
+example:
+```bash
+$ dy ~/ROMs/snake.ch8 ~/.config/dy-chip8/sound/edited_alarm.wav -hz 1000
 ```
 
 ## Dependencies

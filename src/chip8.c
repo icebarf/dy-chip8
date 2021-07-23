@@ -602,10 +602,24 @@ int main(int argc, char **argv) {
         return 0;
     }
     srand(time(NULL));
-
-    /* Run at 700 Mhz */
+    /* Run at 700 Mhz by default*/
     tim.tv_sec = 0;
     tim.tv_nsec = 1428571;
+
+    /* Flag verification */
+    if (argc < 3) {
+        if (strcmp("-hz", argv[3]) == 0) {
+            long ns = strtol(argv[4], NULL, 10);
+
+            if (ns < 0) {
+                printf("Error: Invalid Value for hertz\n");
+                return 0;
+            }
+
+            tim.tv_nsec = (1000000000 / ns);
+        }
+    }
+
 
     /* SDL */
     extern SDL_Window *screen;
@@ -661,11 +675,13 @@ int main(int argc, char **argv) {
             draw_to_window(chip8.pixels);
             chip8.draw = false;
         }
+        int i = 0;
 
         /* Main loop */
         while (1) {
             fetch();
             decode_and_execute();
+            i++;
             nanosleep(&tim, NULL);
 
             break;
