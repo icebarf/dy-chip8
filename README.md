@@ -19,7 +19,7 @@ DY is a chip-8 interpreter (emulator) written in C. Graphics, Input, Sound have 
 
 #### [c8_test rom by Skosulor](https://github.com/Skosulor/c8int/tree/master/test)
 
-![c8_test.png](img/c8_test.png)
+![c8_test.png](img/c8_tests.png)
 
 #### [BestCoder's Test Rom](https://cdn.discordapp.com/attachments/465586212804100106/482263586547302426/BC_test.ch8)
 
