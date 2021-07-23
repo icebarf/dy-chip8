@@ -607,7 +607,7 @@ int main(int argc, char **argv) {
     tim.tv_nsec = 1428571;
 
     /* Flag verification */
-    if (argc < 3) {
+    if (argc > 3) {
         if (strcmp("-hz", argv[3]) == 0) {
             long ns = strtol(argv[4], NULL, 10);
 

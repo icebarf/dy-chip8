@@ -1,12 +1,13 @@
 # DY Chip-8
 
-DY is a chip-8 interpreter (emulator) written in C. Graphics, Input, Sound have been implemented with the help SDL2. The emulator runs at 1 Mhz using nanosleep per loop cycle. It has the following features as of in 4 days of development time.
+DY is a chip-8 interpreter (emulator) written in C. Graphics, Input, Sound have been implemented with SDL2.
 
 ## Features
 - Runs at an oddball resolution of 1280*640
 - Sound
 - Specify core speed at runtime
 - Builtin Debugging to terminal
+- Default speed is 700 Hz
 
 ## Showcase
 
